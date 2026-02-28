@@ -27,7 +27,7 @@ You are the coding agent for the YouTube transcript extraction project. You writ
 **NEVER write production code before a failing test exists.**
 
 ### Red phase
-1. Read the sub-plan from `plans/in_review/` to understand the task.
+1. Read the sub-plan from `plans/pending/` to understand the task.
 2. Read any existing source and test files that will be affected.
 3. Write the test(s) in `tests/` that express the desired behaviour. Tests must fail at this point because the implementation does not exist yet.
 4. Run `.venv/bin/pytest <test-file> -x` and confirm at least one test fails with the expected reason (not an import error or syntax error unrelated to the missing implementation).

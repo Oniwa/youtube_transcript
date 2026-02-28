@@ -48,26 +48,24 @@ The planning agent is configured with:
 - **Model:** opus
 - **Tools:** Read, Glob, Grep, Write, Edit
 - **Mission:** Break large plans into small, focused, self-contained sub-plans
-- **Output:** Sub-plans saved to `plans/pending/NN-kebab-case-name.md`
+- **Output:** Sub-plans saved to `plans/in_review/NN-kebab-case-name.md`
 - **Rules:** One concern per sub-plan, max 15 steps, DAG prerequisites, exact file/function references
 
 ---
 
 ## Step 2 — Feed `plans/transcript_system_plan.md` to the planning agent
 
-> **Status: COMPLETE.** Sub-plans exist in `plans/pending/`.
-
 The planning agent decomposed the source plan into the following sub-plans:
 
-| Sub-plan file | Concern |
-|---------------|---------|
-| `plans/pending/00-coverage-checklist.md` | Maps every source plan item to a sub-plan |
-| `plans/pending/01-requirements-txt.md` | Dependency pinning |
-| `plans/pending/02-transcript-core-module.md` | Core logic (`transcript.py`) |
-| `plans/pending/03-main-cli-entry-point.md` | CLI entry point (`main.py`) |
-| `plans/pending/04-test-suite-structure.md` | Test suite (`tests/test_transcript.py`) |
-| `plans/pending/05-claude-agents.md` | Remaining 5 agent definitions |
-| `plans/pending/06-global-skills.md` | `/git` and `/github` global skills |
+| Sub-plan file                                | Concern |
+|----------------------------------------------|---------|
+| `plans/in_review/00-coverage-checklist.md`   | Maps every source plan item to a sub-plan |
+| `plans/in_review/01-requirements-txt.md`       | Dependency pinning |
+| `plans/in_review/02-claude-agents.md`          | Remaining 5 agent definitions |
+| `plans/in_review/03-global-skills.md`          | `/git` and `/github` global skills |
+| `plans/in_review/04-transcript-core-module.md` | Core logic (`transcript.py`) |
+| `plans/in_review/05-main-cli-entry-point.md`   | CLI entry point (`main.py`) |
+| `plans/in_review/06-test-suite-structure.md`   | Test suite (`tests/test_transcript.py`) |
 
 Work through these in numeric order, moving each file to `plans/done/` when complete.
 
@@ -79,7 +77,7 @@ Create the remaining 5 agents in `.claude/agents/` and 2 global skills in `~/.cl
 
 > `~/.claude/commands/` does not exist yet — create it with `mkdir -p ~/.claude/commands/`.
 
-Detailed instructions are in `plans/pending/05-claude-agents.md` and `plans/pending/06-global-skills.md`.
+Detailed instructions are in `plans/pending/02-claude-agents.md` and `plans/pending/03-global-skills.md`.
 
 ### Agent System Prompts
 

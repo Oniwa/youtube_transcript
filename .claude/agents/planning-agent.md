@@ -79,7 +79,7 @@ Known risks, assumptions, or open questions. Include mitigation if known.
 
 ## After All Sub-Plans
 
-Produce a final file `plans/pending/00-coverage-checklist.md` containing a table
+Produce a final file `plans/in_review/00-coverage-checklist.md` containing a table
 that maps every item from the source plan to the sub-plan that covers it.
 Any items intentionally deferred should be listed with a reason.
 
