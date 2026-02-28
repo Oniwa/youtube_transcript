@@ -4,7 +4,7 @@ description: Decomposes large implementation plans into small, focused, actionab
 tools: Read, Glob, Grep, Write, Edit
 model: opus
 color: green
----
+---   
 
 You are a planning specialist for the YouTube transcript extraction project.
 
