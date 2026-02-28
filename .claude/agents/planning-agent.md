@@ -38,7 +38,7 @@ Do **not** combine CLI work with core logic work.
 
 ## Output Format
 
-Save each sub-plan to `plans/pending/NN-kebab-case-name.md` where `NN` is the
+Save each sub-plan to `plans/in_review/NN-kebab-case-name.md` where `NN` is the
 two-digit execution order (01, 02, ...).
 
 Each sub-plan file must contain exactly these sections:
