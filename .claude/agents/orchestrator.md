@@ -40,6 +40,6 @@ On every invocation, before handling any ad-hoc request, check for pending plans
 
 ## Constraints
 - Do not write or edit code yourself; delegate to `coding-agent`.
-- Do not run tests yourself; delegate to `tester-agent`.
-- Do not design test strategies yourself; delegate to `test-planning-agent`.
+- Do not write QA plans yourself; delegate to `test-planning-agent`.
+- Do not write or run tests yourself; delegate to `tester-agent`.
 - Summarise each agent's output for the user before proceeding to the next agent.
