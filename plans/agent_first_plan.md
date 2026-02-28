@@ -67,15 +67,22 @@ The agent will produce files such as:
 
 ### Step 3 — Create remaining agents
 
-After the planning agent has decomposed the work (and its output can inform the other agents' prompts), create the remaining 5 agents:
+After the planning agent has decomposed the work (and its output can inform the other agents' prompts), create the remaining 5 agents and 2 global skills:
 
+**Agents:**
 - `.claude/agents/orchestrator.md`
 - `.claude/agents/coding-agent.md`
 - `.claude/agents/test-planning-agent.md`
 - `.claude/agents/tester-agent.md`
 - `.claude/agents/review-agent.md`
 
-Summaries are already defined in `plans/transcript_system_plan.md` lines 64–83.
+**Global Skills (`~/.claude/commands/`):**
+- `~/.claude/commands/git.md` — invoked as `/git`; smart git operations (status, commit, branch, push, diff, log, stash)
+- `~/.claude/commands/github.md` — invoked as `/github`; GitHub via `gh` CLI (PRs, issues, releases, CI/actions)
+
+> Note: `~/.claude/commands/` does not exist yet — create it with `mkdir -p ~/.claude/commands/`.
+
+Summaries are already defined in `plans/transcript_system_plan.md` lines 64–93.
 
 ### Step 4 — Implement production code and tests per sub-plans
 
@@ -94,6 +101,8 @@ Work through `plans/pending/` in order, moving each file to `plans/done/` when c
 | `.claude/agents/test-planning-agent.md` | Create (step 3) | Test strategy |
 | `.claude/agents/tester-agent.md` | Create (step 3) | Runs pytest |
 | `.claude/agents/review-agent.md` | Create (step 3) | Code review |
+| `~/.claude/commands/git.md` | Create (step 3) | `/git` smart git skill |
+| `~/.claude/commands/github.md` | Create (step 3) | `/github` gh CLI skill |
 | `plans/pending/` | Populated by agent | Sub-plans from decomposition |
 
 ---
