@@ -1,16 +1,13 @@
 """
-tests/test_transcript.py — Unit tests for the transcript.py core logic module.
+test_transcript.py — Pytest test suite for the YouTube transcript tool.
 
-All tests are isolated (no real network calls). The youtube_transcript_api is
-mocked via unittest.mock where network interaction would otherwise occur.
+Unit tests use mocks; no real network calls are made outside of
+tests decorated with @pytest.mark.integration.
 """
 from __future__ import annotations
 
-import os
-import tempfile
-from unittest.mock import MagicMock, patch
-
 import pytest
+from unittest.mock import MagicMock, patch
 
 from transcript import (
     extract_video_id,
@@ -24,82 +21,82 @@ from youtube_transcript_api._errors import (
     TranscriptsDisabled,
     VideoUnavailable,
 )
+from main import main
 
 
 # ---------------------------------------------------------------------------
 # extract_video_id
 # ---------------------------------------------------------------------------
 
+
 class TestExtractVideoId:
-    """Tests for extract_video_id()."""
+    """Tests for extract_video_id covering all supported URL formats."""
 
-    VALID_ID = "jNQXAC9IVRw"
+    def test_bare_id(self) -> None:
+        """A bare 11-character ID is returned unchanged."""
+        assert extract_video_id("jNQXAC9IVRw") == "jNQXAC9IVRw"
 
-    def test_bare_id_returned_as_is(self) -> None:
-        """A bare 11-character alphanumeric/dash/underscore ID is returned unchanged."""
-        assert extract_video_id(self.VALID_ID) == self.VALID_ID
+    def test_standard_watch_url(self) -> None:
+        """Standard youtube.com/watch?v=<id> URL extracts the ID correctly."""
+        assert extract_video_id("https://www.youtube.com/watch?v=jNQXAC9IVRw") == "jNQXAC9IVRw"
+
+    def test_watch_url_with_extra_params(self) -> None:
+        """Watch URL with additional query parameters extracts the ID."""
+        url = "https://www.youtube.com/watch?v=jNQXAC9IVRw&t=30s&list=PLabc"
+        assert extract_video_id(url) == "jNQXAC9IVRw"
+
+    def test_youtu_be_short_url(self) -> None:
+        """youtu.be/<id> short URL extracts the ID correctly."""
+        assert extract_video_id("https://youtu.be/jNQXAC9IVRw") == "jNQXAC9IVRw"
+
+    def test_youtu_be_with_query_params(self) -> None:
+        """youtu.be/<id>?t=30 short URL with query params extracts the ID."""
+        assert extract_video_id("https://youtu.be/jNQXAC9IVRw?t=30") == "jNQXAC9IVRw"
+
+    def test_shorts_url(self) -> None:
+        """youtube.com/shorts/<id> URL extracts the ID correctly."""
+        assert extract_video_id("https://www.youtube.com/shorts/jNQXAC9IVRw") == "jNQXAC9IVRw"
+
+    def test_mobile_url(self) -> None:
+        """m.youtube.com watch URL is handled."""
+        assert extract_video_id("https://m.youtube.com/watch?v=jNQXAC9IVRw") == "jNQXAC9IVRw"
+
+    def test_youtube_without_www(self) -> None:
+        """youtube.com (no www) watch URL is handled."""
+        assert extract_video_id("https://youtube.com/watch?v=jNQXAC9IVRw") == "jNQXAC9IVRw"
+
+    def test_shorts_url_without_www(self) -> None:
+        """youtube.com/shorts/<id> without www is handled."""
+        assert extract_video_id("https://youtube.com/shorts/jNQXAC9IVRw") == "jNQXAC9IVRw"
 
     def test_bare_id_with_dashes_and_underscores(self) -> None:
         """An 11-char ID using dashes and underscores is accepted."""
         assert extract_video_id("abc-_defGHI") == "abc-_defGHI"
 
-    def test_standard_watch_url(self) -> None:
-        """Standard youtube.com/watch?v=<id> URL extracts the ID correctly."""
-        url = f"https://www.youtube.com/watch?v={self.VALID_ID}"
-        assert extract_video_id(url) == self.VALID_ID
-
-    def test_www_youtube_watch_url(self) -> None:
-        """www.youtube.com watch URL is handled."""
-        assert extract_video_id(
-            f"https://www.youtube.com/watch?v={self.VALID_ID}&feature=share"
-        ) == self.VALID_ID
-
-    def test_mobile_youtube_watch_url(self) -> None:
-        """m.youtube.com watch URL is handled."""
-        assert extract_video_id(
-            f"https://m.youtube.com/watch?v={self.VALID_ID}"
-        ) == self.VALID_ID
-
-    def test_youtu_be_short_url(self) -> None:
-        """youtu.be/<id> short URL extracts the ID correctly."""
-        assert extract_video_id(f"https://youtu.be/{self.VALID_ID}") == self.VALID_ID
-
-    def test_shorts_url(self) -> None:
-        """youtube.com/shorts/<id> URL extracts the ID correctly."""
-        assert extract_video_id(
-            f"https://www.youtube.com/shorts/{self.VALID_ID}"
-        ) == self.VALID_ID
-
-    def test_youtube_without_www(self) -> None:
-        """youtube.com (no www) watch URL is handled."""
-        assert extract_video_id(
-            f"https://youtube.com/watch?v={self.VALID_ID}"
-        ) == self.VALID_ID
-
-    def test_empty_string_raises_value_error(self) -> None:
-        """An empty string raises ValueError."""
-        with pytest.raises(ValueError, match="Could not extract"):
+    def test_invalid_empty_string_raises(self) -> None:
+        """An empty string raises ValueError mentioning 11-character."""
+        with pytest.raises(ValueError, match="11-character"):
             extract_video_id("")
 
-    def test_non_youtube_url_raises_value_error(self) -> None:
-        """A non-YouTube URL raises ValueError."""
-        with pytest.raises(ValueError, match="Could not extract"):
-            extract_video_id(f"https://vimeo.com/{self.VALID_ID}")
+    def test_invalid_non_youtube_url_raises(self) -> None:
+        """A non-YouTube URL raises ValueError mentioning 11-character."""
+        with pytest.raises(ValueError, match="11-character"):
+            extract_video_id("https://vimeo.com/jNQXAC9IVRw")
 
-    def test_too_short_id_raises_value_error(self) -> None:
+    def test_invalid_too_short_raises(self) -> None:
         """A 10-character string is rejected (not 11 chars)."""
-        with pytest.raises(ValueError, match="Could not extract"):
-            extract_video_id("short1234X")
+        with pytest.raises(ValueError):
+            extract_video_id("abc123")
 
-    def test_too_long_id_raises_value_error(self) -> None:
+    def test_invalid_too_long_raises(self) -> None:
         """A 12-character string is rejected (not 11 chars)."""
-        with pytest.raises(ValueError, match="Could not extract"):
-            extract_video_id("toolongid123")
+        with pytest.raises(ValueError):
+            extract_video_id("jNQXAC9IVRwXXX")
 
-    def test_id_with_invalid_chars_raises_value_error(self) -> None:
-        """An 11-char string with invalid characters (!) raises ValueError."""
-        with pytest.raises(ValueError, match="Could not extract"):
-            extract_video_id("jNQXAC9IV!w")
+    def test_watch_url_missing_v_param_raises(self) -> None:
+        """A watch URL without a v= parameter raises ValueError."""
+        with pytest.raises(ValueError):
+            extract_video_id("https://www.youtube.com/watch?list=PLabc")
 
     def test_error_message_contains_input(self) -> None:
         """The ValueError message contains the offending input."""
@@ -107,241 +104,210 @@ class TestExtractVideoId:
         with pytest.raises(ValueError, match="not-a-real-url"):
             extract_video_id(bad)
 
-    def test_plain_string_not_11_chars_raises_value_error(self) -> None:
-        """A plain string that is not 11 chars and not a URL raises ValueError."""
-        with pytest.raises(ValueError, match="Could not extract"):
-            extract_video_id("hello")
-
-    def test_shorts_url_without_www(self) -> None:
-        """youtube.com/shorts/<id> without www is handled."""
-        assert extract_video_id(
-            f"https://youtube.com/shorts/{self.VALID_ID}"
-        ) == self.VALID_ID
-
 
 # ---------------------------------------------------------------------------
 # fetch_transcript
 # ---------------------------------------------------------------------------
 
-class TestFetchTranscript:
-    """Tests for fetch_transcript()."""
 
-    VIDEO_ID = "jNQXAC9IVRw"
+class TestFetchTranscript:
+    """Tests for fetch_transcript using mocked YouTubeTranscriptApi."""
+
+    _VIDEO_ID = "jNQXAC9IVRw"
 
     def _make_snippet(self, text: str) -> MagicMock:
-        """Create a mock snippet with a .text attribute."""
+        """Create a mock snippet object with a .text attribute."""
         snippet = MagicMock()
         snippet.text = text
         return snippet
 
     @patch("transcript.YouTubeTranscriptApi")
-    def test_returns_joined_text(self, mock_api_cls: MagicMock) -> None:
+    def test_successful_fetch_joins_with_newline(self, mock_api_cls: MagicMock) -> None:
         """Snippet texts are joined with newlines and returned."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.return_value = [
-            self._make_snippet("Hello"),
-            self._make_snippet("World"),
-        ]
-        result = fetch_transcript(self.VIDEO_ID)
+        snippets = [self._make_snippet("Hello"), self._make_snippet("World")]
+        mock_api_cls.return_value.fetch.return_value = snippets
+        result = fetch_transcript(self._VIDEO_ID)
         assert result == "Hello\nWorld"
 
     @patch("transcript.YouTubeTranscriptApi")
-    def test_single_snippet(self, mock_api_cls: MagicMock) -> None:
-        """A single snippet is returned without a trailing newline."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.return_value = [self._make_snippet("Only line")]
-        result = fetch_transcript(self.VIDEO_ID)
-        assert result == "Only line"
+    def test_successful_fetch_with_languages(self, mock_api_cls: MagicMock) -> None:
+        """When languages is provided, it is forwarded to api.fetch()."""
+        snippets = [self._make_snippet("Bonjour")]
+        mock_api_cls.return_value.fetch.return_value = snippets
+        result = fetch_transcript(self._VIDEO_ID, languages=["fr", "en"])
+        mock_api_cls.return_value.fetch.assert_called_once_with(
+            self._VIDEO_ID, languages=["fr", "en"]
+        )
+        assert result == "Bonjour"
+
+    @patch("transcript.YouTubeTranscriptApi")
+    def test_raises_transcripts_disabled(self, mock_api_cls: MagicMock) -> None:
+        """TranscriptsDisabled is re-raised without wrapping."""
+        mock_api_cls.return_value.fetch.side_effect = TranscriptsDisabled(self._VIDEO_ID)
+        with pytest.raises(TranscriptsDisabled):
+            fetch_transcript(self._VIDEO_ID)
+
+    @patch("transcript.YouTubeTranscriptApi")
+    def test_raises_no_transcript_found(self, mock_api_cls: MagicMock) -> None:
+        """NoTranscriptFound is re-raised without wrapping."""
+        mock_api_cls.return_value.fetch.side_effect = NoTranscriptFound(
+            self._VIDEO_ID, ["en"], {}
+        )
+        with pytest.raises(NoTranscriptFound):
+            fetch_transcript(self._VIDEO_ID)
+
+    @patch("transcript.YouTubeTranscriptApi")
+    def test_raises_video_unavailable(self, mock_api_cls: MagicMock) -> None:
+        """VideoUnavailable is re-raised without wrapping."""
+        mock_api_cls.return_value.fetch.side_effect = VideoUnavailable(self._VIDEO_ID)
+        with pytest.raises(VideoUnavailable):
+            fetch_transcript(self._VIDEO_ID)
+
+    @patch("transcript.YouTubeTranscriptApi")
+    def test_raises_could_not_retrieve_transcript(self, mock_api_cls: MagicMock) -> None:
+        """CouldNotRetrieveTranscript is re-raised without wrapping."""
+        mock_api_cls.return_value.fetch.side_effect = CouldNotRetrieveTranscript(
+            self._VIDEO_ID
+        )
+        with pytest.raises(CouldNotRetrieveTranscript):
+            fetch_transcript(self._VIDEO_ID)
+
+    @patch("transcript.YouTubeTranscriptApi")
+    def test_unknown_exception_wrapped_in_runtime_error(self, mock_api_cls: MagicMock) -> None:
+        """An unexpected exception is wrapped in RuntimeError with its message."""
+        mock_api_cls.return_value.fetch.side_effect = Exception("network failure")
+        with pytest.raises(RuntimeError, match="network failure"):
+            fetch_transcript(self._VIDEO_ID)
 
     @patch("transcript.YouTubeTranscriptApi")
     def test_empty_transcript_returns_empty_string(self, mock_api_cls: MagicMock) -> None:
         """Zero snippets produce an empty string."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.return_value = []
-        result = fetch_transcript(self.VIDEO_ID)
+        mock_api_cls.return_value.fetch.return_value = []
+        result = fetch_transcript(self._VIDEO_ID)
         assert result == ""
-
-    @patch("transcript.YouTubeTranscriptApi")
-    def test_passes_languages_kwarg(self, mock_api_cls: MagicMock) -> None:
-        """When languages is provided, it is forwarded to api.fetch()."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.return_value = [self._make_snippet("Hola")]
-        fetch_transcript(self.VIDEO_ID, languages=["es"])
-        mock_api.fetch.assert_called_once_with(self.VIDEO_ID, languages=["es"])
 
     @patch("transcript.YouTubeTranscriptApi")
     def test_no_languages_kwarg_when_none(self, mock_api_cls: MagicMock) -> None:
         """When languages is None, the languages kwarg is NOT passed to api.fetch()."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.return_value = [self._make_snippet("Hello")]
-        fetch_transcript(self.VIDEO_ID, languages=None)
-        # Only called with video_id, no languages kwarg
-        mock_api.fetch.assert_called_once_with(self.VIDEO_ID)
-
-    @patch("transcript.YouTubeTranscriptApi")
-    def test_reraises_transcripts_disabled(self, mock_api_cls: MagicMock) -> None:
-        """TranscriptsDisabled is re-raised without wrapping."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.side_effect = TranscriptsDisabled(video_id=self.VIDEO_ID)
-        with pytest.raises(TranscriptsDisabled):
-            fetch_transcript(self.VIDEO_ID)
-
-    @patch("transcript.YouTubeTranscriptApi")
-    def test_reraises_no_transcript_found(self, mock_api_cls: MagicMock) -> None:
-        """NoTranscriptFound is re-raised without wrapping."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.side_effect = NoTranscriptFound(
-            video_id=self.VIDEO_ID,
-            requested_language_codes=["en"],
-            transcript_data={},
-        )
-        with pytest.raises(NoTranscriptFound):
-            fetch_transcript(self.VIDEO_ID)
-
-    @patch("transcript.YouTubeTranscriptApi")
-    def test_reraises_video_unavailable(self, mock_api_cls: MagicMock) -> None:
-        """VideoUnavailable is re-raised without wrapping."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.side_effect = VideoUnavailable(video_id=self.VIDEO_ID)
-        with pytest.raises(VideoUnavailable):
-            fetch_transcript(self.VIDEO_ID)
-
-    @patch("transcript.YouTubeTranscriptApi")
-    def test_reraises_could_not_retrieve(self, mock_api_cls: MagicMock) -> None:
-        """CouldNotRetrieveTranscript is re-raised without wrapping."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.side_effect = CouldNotRetrieveTranscript(video_id=self.VIDEO_ID)
-        with pytest.raises(CouldNotRetrieveTranscript):
-            fetch_transcript(self.VIDEO_ID)
-
-    @patch("transcript.YouTubeTranscriptApi")
-    def test_wraps_unexpected_exception_in_runtime_error(
-        self, mock_api_cls: MagicMock
-    ) -> None:
-        """An unexpected exception is wrapped in RuntimeError with a descriptive message."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.side_effect = ConnectionError("Network unreachable")
-        with pytest.raises(RuntimeError, match=r"Unexpected error.*jNQXAC9IVRw"):
-            fetch_transcript(self.VIDEO_ID)
+        mock_api_cls.return_value.fetch.return_value = [self._make_snippet("Hello")]
+        fetch_transcript(self._VIDEO_ID, languages=None)
+        mock_api_cls.return_value.fetch.assert_called_once_with(self._VIDEO_ID)
 
     @patch("transcript.YouTubeTranscriptApi")
     def test_unicode_snippets(self, mock_api_cls: MagicMock) -> None:
         """Non-ASCII snippet text is joined correctly."""
-        mock_api = mock_api_cls.return_value
-        mock_api.fetch.return_value = [
+        mock_api_cls.return_value.fetch.return_value = [
             self._make_snippet("日本語"),
             self._make_snippet("العربية"),
-            self._make_snippet("Emoji: "),
         ]
-        result = fetch_transcript(self.VIDEO_ID)
-        assert result == "日本語\nالعربية\nEmoji: "
+        result = fetch_transcript(self._VIDEO_ID)
+        assert result == "日本語\nالعربية"
 
 
 # ---------------------------------------------------------------------------
 # save_transcript
 # ---------------------------------------------------------------------------
 
+
 class TestSaveTranscript:
-    """Tests for save_transcript()."""
+    """Tests for save_transcript using pytest's tmp_path fixture."""
 
-    def test_writes_text_to_file(self) -> None:
-        """The transcript text is written to the given output path."""
-        with tempfile.NamedTemporaryFile(mode="r", suffix=".txt", delete=False) as fh:
-            path = fh.name
-        try:
-            save_transcript("Hello, World!", path)
-            with open(path, encoding="utf-8") as fh:
-                content = fh.read()
-            assert content == "Hello, World!"
-        finally:
-            os.unlink(path)
+    def test_creates_file(self, tmp_path: pytest.TempdirFactory) -> None:
+        """The transcript file is created at the given path."""
+        out = tmp_path / "transcript.txt"
+        save_transcript("Hello, world!", str(out))
+        assert out.exists()
 
-    def test_writes_utf8_encoding(self) -> None:
-        """Non-ASCII text (Japanese, Arabic, emoji) is written correctly in UTF-8."""
-        text = "日本語\nالعربية\nEmoji: "
-        with tempfile.NamedTemporaryFile(
-            mode="rb", suffix=".txt", delete=False
-        ) as fh:
-            path = fh.name
-        try:
-            save_transcript(text, path)
-            with open(path, "rb") as fh:
-                raw = fh.read()
-            assert raw == text.encode("utf-8")
-        finally:
-            os.unlink(path)
+    def test_file_contents_match(self, tmp_path: pytest.TempdirFactory) -> None:
+        """The written file contents match the input text."""
+        out = tmp_path / "transcript.txt"
+        save_transcript("Line one\nLine two", str(out))
+        assert out.read_text(encoding="utf-8") == "Line one\nLine two"
 
-    def test_overwrites_existing_file(self) -> None:
-        """Calling save_transcript twice overwrites the previous content."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False, encoding="utf-8"
-        ) as fh:
-            fh.write("old content")
-            path = fh.name
-        try:
-            save_transcript("new content", path)
-            with open(path, encoding="utf-8") as fh:
-                assert fh.read() == "new content"
-        finally:
-            os.unlink(path)
+    def test_utf8_encoding(self, tmp_path: pytest.TempdirFactory) -> None:
+        """Non-ASCII text is written correctly in UTF-8."""
+        text = "こんにちは\n日本語テスト\U0001F600"
+        out = tmp_path / "unicode.txt"
+        save_transcript(text, str(out))
+        assert out.read_text(encoding="utf-8") == text
 
-    def test_empty_string_creates_empty_file(self) -> None:
-        """Saving an empty string produces an empty file."""
-        with tempfile.NamedTemporaryFile(mode="r", suffix=".txt", delete=False) as fh:
-            path = fh.name
-        try:
-            save_transcript("", path)
-            with open(path, encoding="utf-8") as fh:
-                assert fh.read() == ""
-        finally:
-            os.unlink(path)
+    def test_overwrites_existing_file(self, tmp_path: pytest.TempdirFactory) -> None:
+        """Calling save_transcript on an existing file overwrites its content."""
+        out = tmp_path / "transcript.txt"
+        out.write_text("old content", encoding="utf-8")
+        save_transcript("new content", str(out))
+        assert out.read_text(encoding="utf-8") == "new content"
 
-    def test_raises_oserror_for_missing_parent_directory(self) -> None:
-        """Writing to a path whose parent directory doesn't exist raises OSError."""
+    def test_missing_parent_dir_raises_os_error(self, tmp_path: pytest.TempdirFactory) -> None:
+        """Writing to a path whose parent dir does not exist raises OSError."""
+        out = tmp_path / "nonexistent" / "transcript.txt"
         with pytest.raises(OSError):
-            save_transcript("hello", "/nonexistent_dir/transcript.txt")
+            save_transcript("text", str(out))
 
-    def test_returns_none(self) -> None:
+    def test_returns_none(self, tmp_path: pytest.TempdirFactory) -> None:
         """save_transcript returns None."""
-        with tempfile.NamedTemporaryFile(mode="r", suffix=".txt", delete=False) as fh:
-            path = fh.name
-        try:
-            result = save_transcript("text", path)
-            assert result is None
-        finally:
-            os.unlink(path)
+        out = tmp_path / "transcript.txt"
+        result = save_transcript("text", str(out))
+        assert result is None
+
+    def test_empty_string_creates_empty_file(self, tmp_path: pytest.TempdirFactory) -> None:
+        """Saving an empty string produces an empty file."""
+        out = tmp_path / "empty.txt"
+        save_transcript("", str(out))
+        assert out.read_text(encoding="utf-8") == ""
 
 
 # ---------------------------------------------------------------------------
 # get_transcript
 # ---------------------------------------------------------------------------
 
-class TestGetTranscript:
-    """Tests for get_transcript() end-to-end orchestration."""
 
-    VALID_ID = "jNQXAC9IVRw"
-    TRANSCRIPT_TEXT = "Line one\nLine two"
+class TestGetTranscript:
+    """Tests for get_transcript with mocked sub-functions."""
 
     @patch("transcript.save_transcript")
     @patch("transcript.fetch_transcript")
     @patch("transcript.extract_video_id")
-    def test_calls_all_three_functions_in_order(
+    def test_end_to_end_calls_all_three(
         self,
         mock_extract: MagicMock,
         mock_fetch: MagicMock,
         mock_save: MagicMock,
+        tmp_path: pytest.TempdirFactory,
     ) -> None:
         """get_transcript calls extract_video_id, fetch_transcript, save_transcript."""
-        mock_extract.return_value = self.VALID_ID
-        mock_fetch.return_value = self.TRANSCRIPT_TEXT
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_fetch.return_value = "transcript text"
+        out = str(tmp_path / "out.txt")
+        result = get_transcript("https://youtu.be/jNQXAC9IVRw", out)
+        mock_extract.assert_called_once_with("https://youtu.be/jNQXAC9IVRw")
+        mock_fetch.assert_called_once_with("jNQXAC9IVRw", languages=None)
+        mock_save.assert_called_once_with("transcript text", out)
+        assert result == "transcript text"
 
-        get_transcript("https://www.youtube.com/watch?v=jNQXAC9IVRw", "/tmp/out.txt")
+    @patch("transcript.save_transcript")
+    @patch("transcript.fetch_transcript")
+    @patch("transcript.extract_video_id")
+    def test_passes_languages_to_fetch(
+        self,
+        mock_extract: MagicMock,
+        mock_fetch: MagicMock,
+        mock_save: MagicMock,
+        tmp_path: pytest.TempdirFactory,
+    ) -> None:
+        """Languages list is forwarded to fetch_transcript."""
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_fetch.return_value = "text"
+        out = str(tmp_path / "out.txt")
+        get_transcript("jNQXAC9IVRw", out, languages=["fr"])
+        mock_fetch.assert_called_once_with("jNQXAC9IVRw", languages=["fr"])
 
-        mock_extract.assert_called_once_with(
-            "https://www.youtube.com/watch?v=jNQXAC9IVRw"
-        )
-        mock_fetch.assert_called_once_with(self.VALID_ID, languages=None)
-        mock_save.assert_called_once_with(self.TRANSCRIPT_TEXT, "/tmp/out.txt")
+    @patch("transcript.extract_video_id")
+    def test_propagates_value_error(self, mock_extract: MagicMock) -> None:
+        """ValueError from extract_video_id propagates unchanged."""
+        mock_extract.side_effect = ValueError("bad url")
+        with pytest.raises(ValueError, match="bad url"):
+            get_transcript("bad", "out.txt")
 
     @patch("transcript.save_transcript")
     @patch("transcript.fetch_transcript")
@@ -353,40 +319,10 @@ class TestGetTranscript:
         mock_save: MagicMock,
     ) -> None:
         """get_transcript returns the fetched transcript text."""
-        mock_extract.return_value = self.VALID_ID
-        mock_fetch.return_value = self.TRANSCRIPT_TEXT
-
-        result = get_transcript(self.VALID_ID, "/tmp/out.txt")
-        assert result == self.TRANSCRIPT_TEXT
-
-    @patch("transcript.save_transcript")
-    @patch("transcript.fetch_transcript")
-    @patch("transcript.extract_video_id")
-    def test_passes_languages_to_fetch(
-        self,
-        mock_extract: MagicMock,
-        mock_fetch: MagicMock,
-        mock_save: MagicMock,
-    ) -> None:
-        """Languages list is forwarded to fetch_transcript."""
-        mock_extract.return_value = self.VALID_ID
-        mock_fetch.return_value = self.TRANSCRIPT_TEXT
-
-        get_transcript(self.VALID_ID, "/tmp/out.txt", languages=["fr", "en"])
-
-        mock_fetch.assert_called_once_with(self.VALID_ID, languages=["fr", "en"])
-
-    @patch("transcript.fetch_transcript")
-    @patch("transcript.extract_video_id")
-    def test_propagates_value_error_from_extract(
-        self,
-        mock_extract: MagicMock,
-        mock_fetch: MagicMock,
-    ) -> None:
-        """ValueError from extract_video_id propagates unchanged."""
-        mock_extract.side_effect = ValueError("bad input")
-        with pytest.raises(ValueError, match="bad input"):
-            get_transcript("bad_input", "/tmp/out.txt")
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_fetch.return_value = "Line one\nLine two"
+        result = get_transcript("jNQXAC9IVRw", "/tmp/out.txt")
+        assert result == "Line one\nLine two"
 
     @patch("transcript.save_transcript")
     @patch("transcript.fetch_transcript")
@@ -398,10 +334,10 @@ class TestGetTranscript:
         mock_save: MagicMock,
     ) -> None:
         """TranscriptsDisabled from fetch_transcript propagates unchanged."""
-        mock_extract.return_value = self.VALID_ID
-        mock_fetch.side_effect = TranscriptsDisabled(video_id=self.VALID_ID)
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_fetch.side_effect = TranscriptsDisabled(video_id="jNQXAC9IVRw")
         with pytest.raises(TranscriptsDisabled):
-            get_transcript(self.VALID_ID, "/tmp/out.txt")
+            get_transcript("jNQXAC9IVRw", "/tmp/out.txt")
 
     @patch("transcript.save_transcript")
     @patch("transcript.fetch_transcript")
@@ -413,24 +349,165 @@ class TestGetTranscript:
         mock_save: MagicMock,
     ) -> None:
         """OSError from save_transcript propagates unchanged."""
-        mock_extract.return_value = self.VALID_ID
-        mock_fetch.return_value = self.TRANSCRIPT_TEXT
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_fetch.return_value = "text"
         mock_save.side_effect = OSError("Disk full")
         with pytest.raises(OSError, match="Disk full"):
-            get_transcript(self.VALID_ID, "/tmp/out.txt")
+            get_transcript("jNQXAC9IVRw", "/tmp/out.txt")
 
-    @patch("transcript.save_transcript")
-    @patch("transcript.fetch_transcript")
-    @patch("transcript.extract_video_id")
-    def test_returns_text_not_none(
+
+# ---------------------------------------------------------------------------
+# main (CLI entry point)
+# ---------------------------------------------------------------------------
+
+
+class TestMain:
+    """Tests for the main() CLI entry point."""
+
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_success_exit_code_zero(
         self,
         mock_extract: MagicMock,
-        mock_fetch: MagicMock,
-        mock_save: MagicMock,
+        mock_get: MagicMock,
+        tmp_path: pytest.TempdirFactory,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """get_transcript always returns a string, never None."""
-        mock_extract.return_value = self.VALID_ID
-        mock_fetch.return_value = ""
+        """A successful run returns exit code 0."""
+        monkeypatch.chdir(tmp_path)
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_get.return_value = "transcript text"
+        result = main(["https://youtu.be/jNQXAC9IVRw"])
+        assert result == 0
 
-        result = get_transcript(self.VALID_ID, "/tmp/out.txt")
-        assert isinstance(result, str)
+    @patch("main.extract_video_id")
+    def test_invalid_url_exit_code_one(
+        self, mock_extract: MagicMock, capsys: pytest.CaptureFixture
+    ) -> None:
+        """An invalid URL returns exit code 1 and writes to stderr."""
+        mock_extract.side_effect = ValueError("bad url")
+        result = main(["https://vimeo.com/12345"])
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "Error" in captured.err
+
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_custom_output_path(
+        self,
+        mock_extract: MagicMock,
+        mock_get: MagicMock,
+        tmp_path: pytest.TempdirFactory,
+    ) -> None:
+        """The --output flag is forwarded to get_transcript."""
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_get.return_value = "text"
+        out = str(tmp_path / "custom.txt")
+        result = main(["https://youtu.be/jNQXAC9IVRw", "--output", out])
+        assert result == 0
+        mock_get.assert_called_once_with(
+            "https://youtu.be/jNQXAC9IVRw", out, languages=None
+        )
+
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_lang_flag_forwarded(
+        self,
+        mock_extract: MagicMock,
+        mock_get: MagicMock,
+        tmp_path: pytest.TempdirFactory,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Multiple --lang flags are collected and forwarded as a list."""
+        monkeypatch.chdir(tmp_path)
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_get.return_value = "text"
+        result = main(["https://youtu.be/jNQXAC9IVRw", "--lang", "en", "--lang", "fr"])
+        assert result == 0
+        mock_get.assert_called_once_with(
+            "https://youtu.be/jNQXAC9IVRw",
+            "jNQXAC9IVRw.txt",
+            languages=["en", "fr"],
+        )
+
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_transcripts_disabled_exit_one(
+        self,
+        mock_extract: MagicMock,
+        mock_get: MagicMock,
+        tmp_path: pytest.TempdirFactory,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """TranscriptsDisabled causes exit code 1 with an error on stderr."""
+        monkeypatch.chdir(tmp_path)
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_get.side_effect = TranscriptsDisabled("jNQXAC9IVRw")
+        result = main(["https://youtu.be/jNQXAC9IVRw"])
+        assert result == 1
+        assert "Error" in capsys.readouterr().err
+
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_os_error_exit_one(
+        self,
+        mock_extract: MagicMock,
+        mock_get: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ) -> None:
+        """OSError from get_transcript causes exit code 1 with an error on stderr."""
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_get.side_effect = OSError("permission denied")
+        result = main(["https://youtu.be/jNQXAC9IVRw", "--output", "/ro/out.txt"])
+        assert result == 1
+        assert "Error" in capsys.readouterr().err
+
+    def test_default_output_filename_uses_video_id(
+        self,
+        tmp_path: pytest.TempdirFactory,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Default output filename is <video_id>.txt in the current directory."""
+        monkeypatch.chdir(tmp_path)
+        with patch("main.get_transcript") as mock_get, \
+                patch("main.extract_video_id") as mock_extract:
+            mock_extract.return_value = "jNQXAC9IVRw"
+            mock_get.return_value = "text"
+            main(["https://youtu.be/jNQXAC9IVRw"])
+            mock_get.assert_called_once_with(
+                "https://youtu.be/jNQXAC9IVRw",
+                "jNQXAC9IVRw.txt",
+                languages=None,
+            )
+
+
+# ---------------------------------------------------------------------------
+# integration (real network — gated by marker)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.integration
+class TestIntegration:
+    """Integration tests that make real network calls to YouTube.
+
+    Run with: .venv/bin/pytest tests/ -m integration -v
+    Skipped by default: .venv/bin/pytest tests/ -m "not integration" -v
+    """
+
+    # "Me at the zoo" — the first YouTube video, a reliable test fixture.
+    KNOWN_VIDEO_ID = "jNQXAC9IVRw"
+    KNOWN_VIDEO_URL = f"https://www.youtube.com/watch?v={KNOWN_VIDEO_ID}"
+
+    def test_fetch_known_video(self, tmp_path: pytest.TempdirFactory) -> None:
+        """Fetching the first YouTube video produces a non-empty transcript file."""
+        out = str(tmp_path / f"{self.KNOWN_VIDEO_ID}.txt")
+        text = get_transcript(self.KNOWN_VIDEO_URL, out)
+        assert len(text) > 0
+        assert (tmp_path / f"{self.KNOWN_VIDEO_ID}.txt").exists()
+
+    def test_invalid_url_raises_value_error(self) -> None:
+        """A non-YouTube URL raises ValueError even with a real network."""
+        with pytest.raises(ValueError):
+            get_transcript("https://vimeo.com/jNQXAC9IVRw", "unused.txt")

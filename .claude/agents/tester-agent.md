@@ -83,7 +83,7 @@ Run after the test suite passes. Both tools must report **zero findings** before
 
 ## Constraints
 - Always use `.venv/bin/pytest` — never the system `pytest`.
+- Always use `.venv/bin/ruff` and `.venv/bin/pylint` — never system-level tools.
 - Do not modify production code; report failures to the orchestrator.
 - If pytest cannot be imported, report the error and stop.
-- Always use `.venv/bin/ruff` and `.venv/bin/pylint` — never system-level tools.
 - Lint checks are mandatory — a run is not complete until both ruff and pylint pass.
