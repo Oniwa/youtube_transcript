@@ -30,7 +30,7 @@ Create `transcript.py` as the pure logic module containing the 4 public function
 
    from youtube_transcript_api import YouTubeTranscriptApi
    from youtube_transcript_api._errors import (
-       NoTranscriptAvailable,
+       CouldNotRetrieveTranscript,
        NoTranscriptFound,
        TranscriptsDisabled,
        VideoUnavailable,
@@ -110,7 +110,7 @@ Create `transcript.py` as the pure logic module containing the 4 public function
            TranscriptsDisabled: Transcripts are disabled for this video.
            NoTranscriptFound: No transcript exists in any of the requested languages.
            VideoUnavailable: The video does not exist or is private.
-           NoTranscriptAvailable: No transcript is available for this video.
+           CouldNotRetrieveTranscript: No transcript could be retrieved for this video.
            RuntimeError: An unexpected API error occurred.
        """
        try:
@@ -120,7 +120,7 @@ Create `transcript.py` as the pure logic module containing the 4 public function
                kwargs["languages"] = languages
            fetched = api.fetch(video_id, **kwargs)
            return "\n".join(snippet.text for snippet in fetched)
-       except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable, NoTranscriptAvailable):
+       except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable, CouldNotRetrieveTranscript):
            raise
        except Exception as err:
            raise RuntimeError(
@@ -172,7 +172,7 @@ Create `transcript.py` as the pure logic module containing the 4 public function
            TranscriptsDisabled: Transcripts are disabled for this video.
            NoTranscriptFound: No transcript in the requested languages.
            VideoUnavailable: The video does not exist or is private.
-           NoTranscriptAvailable: No transcript available for this video.
+           CouldNotRetrieveTranscript: No transcript could be retrieved for this video.
            RuntimeError: An unexpected error occurred during fetching.
            OSError: If the transcript cannot be saved to output_path.
        """
@@ -238,7 +238,7 @@ Create `transcript.py` as the pure logic module containing the 4 public function
 - No `print()` calls exist anywhere in `transcript.py`.
 - `extract_video_id` correctly handles: standard watch URL, youtu.be short URL, Shorts URL, mobile URL, and bare 11-character ID.
 - `extract_video_id` raises `ValueError` for invalid or non-YouTube input.
-- `fetch_transcript` re-raises `TranscriptsDisabled`, `NoTranscriptFound`, `VideoUnavailable`, and `NoTranscriptAvailable` without wrapping.
+- `fetch_transcript` re-raises `TranscriptsDisabled`, `NoTranscriptFound`, `VideoUnavailable`, and `CouldNotRetrieveTranscript` without wrapping.
 - `fetch_transcript` wraps unexpected exceptions in `RuntimeError`.
 - `save_transcript` writes files with `encoding="utf-8"`.
 - `get_transcript` calls all three of the other functions in sequence.
@@ -248,4 +248,4 @@ Create `transcript.py` as the pure logic module containing the 4 public function
 - **Private error module**: `youtube_transcript_api._errors` is a private submodule. The `==1.2.4` pin mitigates breakage, but if the library restructures its error hierarchy in a future version, these imports will fail. Mitigation: re-test after any pin upgrade.
 - **API method signature**: `YouTubeTranscriptApi().fetch()` is called with a `languages` keyword argument. If the method signature changes in a future version, the call will fail. Mitigation: the version pin prevents accidental upgrades.
 - **YouTube format changes**: The regex `^[A-Za-z0-9_-]{11}$` and URL path patterns are hardcoded. If YouTube changes its video ID format or URL structure, `extract_video_id` will silently fail for new URLs. Mitigation: the `ValueError` message names the 11-character constraint, making the point of failure obvious.
-- **Assumption**: `fetch_transcript` iterates over the fetched object with `snippet.text` attribute access. Verify this attribute name against the installed version of `youtube-transcript-api==1.2.4` before finalising the implementation.
+- **Verified**: `fetch_transcript` iterates over the fetched object with `snippet.text` attribute access. Confirmed correct against `youtube-transcript-api==1.2.4` — `FetchedTranscriptSnippet` is a dataclass with a `text: str` field.
