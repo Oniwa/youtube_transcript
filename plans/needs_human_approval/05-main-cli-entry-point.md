@@ -35,7 +35,7 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
    import sys
 
    from transcript import (
-       NoTranscriptAvailable,
+       CouldNotRetrieveTranscript,
        NoTranscriptFound,
        TranscriptsDisabled,
        VideoUnavailable,
@@ -114,7 +114,7 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
 
        try:
            text = get_transcript(args.url, output_path, languages=args.languages)
-       except (TranscriptsDisabled, NoTranscriptFound, NoTranscriptAvailable) as err:
+       except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript) as err:
            print(f"Error: No transcript available — {err}", file=sys.stderr)
            return 1
        except VideoUnavailable as err:
@@ -198,7 +198,7 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
 
 ### Risks
 
-- **Import of error classes**: `main.py` imports `TranscriptsDisabled`, `NoTranscriptFound`, `VideoUnavailable`, and `NoTranscriptAvailable` from `transcript`. This is possible because `transcript.py` imports them at module level, making them available as names in the `transcript` namespace. If `transcript.py` moves these imports into a function body, the re-export will break. Mitigation: keep the imports at module level in `transcript.py`.
+- **Import of error classes**: `main.py` imports `TranscriptsDisabled`, `NoTranscriptFound`, `VideoUnavailable`, and `CouldNotRetrieveTranscript` from `transcript`. This is possible because `transcript.py` imports them at module level, making them available as names in the `transcript` namespace. If `transcript.py` moves these imports into a function body, the re-export will break. Mitigation: keep the imports at module level in `transcript.py`.
 - **argparse exit code**: argparse uses exit code 2 for argument parsing errors, which differs from the project's convention of exit code 1. This is standard Python behaviour and is acceptable — document it in the user-facing help if needed.
 - **Assumption**: The default filename `<video_id>.txt` is written to the current working directory. If the cwd is read-only, the write will fail. This is a known limitation documented in the project's `Known Risks` section.
 - **Open question**: Should `main.py` support a `--version` flag? Deferred to a future sub-plan.
