@@ -28,8 +28,9 @@ None.
 5. **Verify the import works** by running `.venv/bin/python -c "from youtube_transcript_api import YouTubeTranscriptApi; print('OK')"`. Confirm the output is `OK`.
    - Success: command exits with code 0 and prints `OK`.
 
-6. **Verify the error classes are importable** by running `.venv/bin/python -c "from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, VideoUnavailable, NoTranscriptAvailable; print('OK')"`. These are needed by `transcript.py`.
+6. **Verify the error classes are importable** by running `.venv/bin/python -c "from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, VideoUnavailable, CouldNotRetrieveTranscript; print('OK')"`. These are needed by `transcript.py`.
    - Success: command exits with code 0 and prints `OK`.
+   - Note: `NoTranscriptAvailable` does not exist in 1.2.4. The base class `CouldNotRetrieveTranscript` covers that role.
 
 ### Edge Cases
 
@@ -45,7 +46,7 @@ None.
 - `requirements.txt` exists at the project root with contents `youtube-transcript-api==1.2.4` (no other lines, no version ranges).
 - `.venv/bin/pip show youtube-transcript-api` outputs `Version: 1.2.4`.
 - `.venv/bin/python -c "from youtube_transcript_api import YouTubeTranscriptApi"` exits with code 0.
-- `.venv/bin/python -c "from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, VideoUnavailable, NoTranscriptAvailable"` exits with code 0.
+- `.venv/bin/python -c "from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, VideoUnavailable, CouldNotRetrieveTranscript"` exits with code 0. (`NoTranscriptAvailable` does not exist in 1.2.4; `CouldNotRetrieveTranscript` is the correct base class.)
 - No other packages are pinned in `requirements.txt` (test runner packages such as `pytest` and `pytest-cov` are installed separately).
 
 ### Risks
