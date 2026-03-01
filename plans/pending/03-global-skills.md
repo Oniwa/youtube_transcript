@@ -1,7 +1,7 @@
 # Sub-plan 03: Create the 2 Global Skill Files
 
 ### Problem Statement
-Create the 2 global skill files (`git.md` and `github.md`) in `~/.claude/commands/` so that the `/git` and `/github` slash commands are available in any Claude Code session, providing safe, natural-language-driven git and GitHub operations.
+Create the 2 global skill files (`git.md` and `github.md`) in `.claude/commands/` so that the `/git` and `/github` slash commands are available in any Claude Code session, providing safe, natural-language-driven git and GitHub operations.
 
 ### Prerequisites
 None (can run in parallel with `01-requirements-txt.md` and `02-claude-agents.md`).
@@ -9,15 +9,15 @@ None (can run in parallel with `01-requirements-txt.md` and `02-claude-agents.md
 ### Files Affected
 | File Path | Action | Description |
 |-----------|--------|-------------|
-| `~/.claude/commands/git.md` | Create | `/git` skill for natural-language git operations |
-| `~/.claude/commands/github.md` | Create | `/github` skill for GitHub operations via `gh` CLI |
+| `.claude/commands/git.md` | Create | `/git` skill for natural-language git operations |
+| `.claude/commands/github.md` | Create | `/github` skill for GitHub operations via `gh` CLI |
 
 ### Steps
 
-1. **Create the `~/.claude/commands/` directory** by running `mkdir -p ~/.claude/commands/`. This directory does not exist by default; `mkdir -p` is safe to run even if it already exists.
-   - Success: `ls ~/.claude/commands/` exits with code 0.
+1. **Create the `.claude/commands/` directory** by running `mkdir -p .claude/commands/`. This directory does not exist by default; `mkdir -p` is safe to run even if it already exists.
+   - Success: `ls .claude/commands/` exits with code 0.
 
-2. **Create `~/.claude/commands/git.md`** with the following content:
+2. **Create `.claude/commands/git.md`** with the following content:
    ```markdown
    # /git — Smart Git Operations
 
@@ -54,9 +54,9 @@ None (can run in parallel with `01-requirements-txt.md` and `02-claude-agents.md
    - "show me what changed since yesterday" → `git log --oneline --since="1 day ago"`
    - "stash my work in progress" → `git stash push -m "wip: <description>"`
    ```
-   - Success: file exists and `wc -l ~/.claude/commands/git.md` shows at least 30 lines.
+   - Success: file exists and `wc -l .claude/commands/git.md` shows at least 30 lines.
 
-3. **Create `~/.claude/commands/github.md`** with the following content:
+3. **Create `.claude/commands/github.md`** with the following content:
    ```markdown
    # /github — GitHub Operations via `gh` CLI
 
@@ -107,33 +107,33 @@ None (can run in parallel with `01-requirements-txt.md` and `02-claude-agents.md
    - If `gh` is not installed: print "The `gh` CLI is not installed. Install it from https://cli.github.com/ and authenticate with `gh auth login`."
    - If a command fails with an API error: print the full error message and suggest the most likely fix.
    ```
-   - Success: file exists and `wc -l ~/.claude/commands/github.md` shows at least 40 lines.
+   - Success: file exists and `wc -l .claude/commands/github.md` shows at least 40 lines.
 
-4. **Verify both files exist** by running `ls -la ~/.claude/commands/`:
+4. **Verify both files exist** by running `ls -la .claude/commands/`:
    - Success: output lists both `git.md` and `github.md`.
 
 5. **Confirm `git.md` contains the safety rules** by searching for "Never force-push" in the file:
-   - Success: the phrase appears in `~/.claude/commands/git.md`.
+   - Success: the phrase appears in `.claude/commands/git.md`.
 
 6. **Confirm `github.md` contains the PR creation workflow** by searching for "PR Creation Workflow":
-   - Success: the phrase appears in `~/.claude/commands/github.md`.
+   - Success: the phrase appears in `.claude/commands/github.md`.
 
 ### Edge Cases
 
-- **Input**: `~/.claude/commands/` already exists with old versions of these files — overwrite them unconditionally to ensure the content matches this sub-plan.
+- **Input**: `.claude/commands/` already exists with old versions of these files — overwrite them unconditionally to ensure the content matches this sub-plan.
 - **Input**: The user's home directory is set to an unexpected path (e.g., `/root`) — use `$HOME` or `~` expansion consistently; do not hard-code `/home/oniwa/`.
-- **Runtime**: `mkdir -p ~/.claude/commands/` fails because a file named `.claude` (not a directory) already exists at `~/.claude` — inspect the error, remove or rename the conflicting file, and retry.
+- **Runtime**: `mkdir -p .claude/commands/` fails because a file named `.claude` (not a directory) already exists at `~/.claude` — inspect the error, remove or rename the conflicting file, and retry.
 - **Runtime**: Disk full when writing skill files — write will fail with `OSError`; free space and retry.
 - **Environment**: The user does not have `gh` installed — `github.md` explicitly documents this condition and instructs the user to install and authenticate `gh`. The skill file itself is valid even without `gh` present.
-- **Environment**: File permissions on `~/.claude/commands/` are too restrictive — run `chmod u+rw ~/.claude/commands/*.md` after creation to ensure the files are readable.
+- **Environment**: File permissions on `.claude/commands/` are too restrictive — run `chmod u+rw .claude/commands/*.md` after creation to ensure the files are readable.
 
 ### Acceptance Criteria
 
-- `~/.claude/commands/` directory exists.
-- `~/.claude/commands/git.md` exists and contains:
+- `.claude/commands/` directory exists.
+- `.claude/commands/git.md` exists and contains:
   - At least 6 covered operation descriptions (status, commit, branch, push, pull, diff, log, stash).
   - All 5 safety rules (no force-push to main/master, no `reset --hard` without confirmation, no `clean -f` without confirmation, show command first, summarise after).
-- `~/.claude/commands/github.md` exists and contains:
+- `.claude/commands/github.md` exists and contains:
   - PR operations (create, list, view, merge, checkout).
   - Issue operations (create, list, view, close).
   - The 5-step PR creation workflow.
@@ -142,6 +142,6 @@ None (can run in parallel with `01-requirements-txt.md` and `02-claude-agents.md
 
 ### Risks
 
-- **Assumption**: Claude Code loads global skills from `~/.claude/commands/`. If a future version of Claude Code changes this path, the skill files will not be picked up automatically. Check the Claude Code release notes before upgrading.
+- **Assumption**: Claude Code loads global skills from `.claude/commands/`. If a future version of Claude Code changes this path, the skill files will not be picked up automatically. Check the Claude Code release notes before upgrading.
 - **`gh` CLI dependency**: `github.md` relies on the `gh` CLI being installed and authenticated. The file documents this prerequisite, but a team member who does not have `gh` installed will not be able to use the `/github` skill.
 - **Open question**: Should the skills include a `tools:` YAML front matter block (like agent files)? As of the current Claude Code version, global skills do not use YAML front matter — they are plain Markdown prompts. If this changes, update the files accordingly.
