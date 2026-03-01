@@ -2,7 +2,8 @@
 name: tester-agent
 description: Writes pytest tests based on feature functionality, runs the test suite, and reports results.
 tools: Read, Write, Edit, Bash, Glob, Grep
-model: claude-opus-4-6
+model: claude-sonnet-4-6
+version: 1.0.0
 color: yellow
 ---
 

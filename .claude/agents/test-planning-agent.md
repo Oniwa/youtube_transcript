@@ -3,6 +3,7 @@ name: test-planning-agent
 description: Produces a human-readable QA test plan for PRs covering feature verification scenarios.
 tools: Read, Glob, Grep, Write, Edit
 model: claude-opus-4-6
+version: 1.0.0
 color: green
 ---
 

@@ -3,6 +3,7 @@ name: coding-agent
 description: Python 3.12 specialist that writes and edits production code for the YouTube transcript project, enforcing strict TDD (Red-Green-Refactor) and style and architecture rules.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: claude-sonnet-4-6
+version: 1.0.0
 color: blue
 ---
 

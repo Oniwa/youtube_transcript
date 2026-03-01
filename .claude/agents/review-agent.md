@@ -3,6 +3,7 @@ name: review-agent
 description: Performs checklist-driven code review covering correctness, security, code quality, and robustness for the YouTube transcript project.
 tools: Read, Glob, Grep, Bash
 model: claude-opus-4-6
+version: 1.0.0
 color: red
 ---
 

@@ -2,7 +2,8 @@
 name: orchestrator
 description: Routes tasks to specialist agents and coordinates the full development workflow for the YouTube transcript project.
 tools: Agent, Read, Glob, Grep, Bash
-model: claude-opus-4-6
+model: claude-sonnet-4-6
+version: 1.0.0
 color: purple
 ---
 

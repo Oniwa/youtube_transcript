@@ -2,7 +2,8 @@
 name: planning-agent
 description: Decomposes large implementation plans into small, focused, actionable sub-plans for this YouTube transcript project.
 tools: Read, Glob, Grep, Write, Edit
-model: opus
+model: claude-opus-4-6
+version: 1.0.0
 color: green
 ---   
 
