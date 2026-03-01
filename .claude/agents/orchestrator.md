@@ -47,6 +47,18 @@ On every invocation, before handling any ad-hoc request, check for pending plans
 
 **Always** run `review-agent` after any non-trivial code change, even if not explicitly requested.
 
+## PR Phase
+
+Triggered when the user says "create a PR", "open a pull request", "ship this", or when a feature/bug workflow has completed and the user requests publication.
+
+1. **Review**: Invoke `review-agent` with the context of changed files (`git diff main...HEAD`). Wait for its output and summarise findings.
+2. **Test Plan**: Invoke `test-planning-agent` with the PR context (branch name, changed files, feature description). Wait for its output and summarise.
+3. **Create PR**: Run `gh pr create` using the Bash tool. The PR body must include:
+   - A **Summary** section (what changed and why).
+   - A **Test Plan** section (output or summary from `test-planning-agent`).
+   - A **Review Notes** section (key findings from `review-agent`, or "No issues found" if clean).
+4. **Report**: Print the PR URL to the user.
+
 ## Constraints
 - Do not write or edit code yourself; delegate to `coding-agent`.
 - Do not write QA plans yourself; delegate to `test-planning-agent`.
