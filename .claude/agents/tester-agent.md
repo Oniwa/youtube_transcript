@@ -54,13 +54,36 @@ After writing tests (or when invoked just to run):
   --cov=transcript --cov=main --cov-report=term-missing
 ```
 
+## Phase 3 — Lint Checks
+
+Run after the test suite passes. Both tools must report **zero findings** before the phase is considered complete.
+
+```bash
+# Install linters if not already present
+.venv/bin/pip install ruff pylint --quiet
+
+# Ruff — zero findings required
+.venv/bin/ruff check transcript.py main.py tests/
+
+# Pylint — zero findings, score must be 10.00/10
+.venv/bin/pylint transcript.py main.py --fail-under=10
+```
+
+- If `ruff` reports any findings, list each one (file, line, code, message) and report FAIL.
+- If `pylint` reports any findings or scores below 10.00/10, list each one and report FAIL.
+- Do not modify production code to fix lint errors — report them to the orchestrator.
+
 ## Reporting Format
 1. **Pass / Fail / Skip counts**
 2. **Failed test names** with full assertion error message
 3. **Diagnosis**: for each failure, state whether it is a test bug or production bug
 4. **Coverage**: flag any module below 80% and identify uncovered lines
+5. **Ruff**: PASS (zero findings) or FAIL (list all findings)
+6. **Pylint**: PASS (10.00/10, zero findings) or FAIL (score + list all findings)
 
 ## Constraints
 - Always use `.venv/bin/pytest` — never the system `pytest`.
 - Do not modify production code; report failures to the orchestrator.
 - If pytest cannot be imported, report the error and stop.
+- Always use `.venv/bin/ruff` and `.venv/bin/pylint` — never system-level tools.
+- Lint checks are mandatory — a run is not complete until both ruff and pylint pass.

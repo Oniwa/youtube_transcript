@@ -12,6 +12,7 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
 | File Path | Action | Description |
 |-----------|--------|-------------|
 | `main.py` | Modify / Rewrite | CLI entry point using argparse; no business logic |
+| `.claude/agents/tester-agent.md` | Modify | Add Phase 3 lint checks (ruff + pylint) as mandatory step |
 
 ### Steps
 
@@ -35,7 +36,7 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
    import sys
 
    from transcript import (
-       NoTranscriptAvailable,
+       CouldNotRetrieveTranscript,
        NoTranscriptFound,
        TranscriptsDisabled,
        VideoUnavailable,
@@ -114,7 +115,7 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
 
        try:
            text = get_transcript(args.url, output_path, languages=args.languages)
-       except (TranscriptsDisabled, NoTranscriptFound, NoTranscriptAvailable) as err:
+       except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript) as err:
            print(f"Error: No transcript available — {err}", file=sys.stderr)
            return 1
        except VideoUnavailable as err:
@@ -174,6 +175,50 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
     - Search `main.py` for `YouTubeTranscriptApi`, `re.compile`, `urlparse` — none should be found.
     - Success: none of these strings appear in `main.py`.
 
+12. **Run ruff** against `main.py` (and `transcript.py` for regressions). Zero findings required:
+    ```bash
+    .venv/bin/pip install ruff --quiet
+    .venv/bin/ruff check main.py transcript.py
+    ```
+    - Success: command exits with code 0 and prints no findings.
+
+13. **Run pylint** against `main.py` (and `transcript.py` for regressions). Zero findings and a score of 10.00/10 required:
+    ```bash
+    .venv/bin/pip install pylint --quiet
+    .venv/bin/pylint main.py transcript.py --fail-under=10
+    ```
+    - Success: command exits with code 0, no findings listed, score is `10.00/10`.
+
+14. **Update `.claude/agents/tester-agent.md`** to add a permanent Phase 3 lint section so all future plans automatically run ruff and pylint. Add the following section after Phase 2 — Run Suite:
+    ```markdown
+    ## Phase 3 — Lint Checks
+
+    Run after the test suite passes. Both tools must report **zero findings** before the phase is considered complete.
+
+    ```bash
+    # Install linters if not already present
+    .venv/bin/pip install ruff pylint --quiet
+
+    # Ruff — zero findings required
+    .venv/bin/ruff check transcript.py main.py tests/
+
+    # Pylint — zero findings, score must be 10.00/10
+    .venv/bin/pylint transcript.py main.py --fail-under=10
+    ```
+
+    - If `ruff` reports any findings, list each one (file, line, code, message) and report FAIL.
+    - If `pylint` reports any findings or scores below 10.00/10, list each one and report FAIL.
+    - Do not modify production code to fix lint errors — report them to the orchestrator.
+    ```
+    Also update the Reporting Format to add:
+    - `5. **Ruff**: PASS (zero findings) or FAIL (list all findings)`
+    - `6. **Pylint**: PASS (10.00/10, zero findings) or FAIL (score + list all findings)`
+
+    And add to Constraints:
+    - `Always use .venv/bin/ruff and .venv/bin/pylint — never system-level tools.`
+    - `Lint checks are mandatory — a run is not complete until both ruff and pylint pass.`
+    - Success: `.claude/agents/tester-agent.md` contains a Phase 3 section with ruff and pylint commands.
+
 ### Edge Cases
 
 - **Input**: No `url` argument given on the command line — argparse prints its usage message to stderr and exits with code 2 (standard argparse behaviour for missing required arguments; this is acceptable and does not need special handling).
@@ -195,10 +240,13 @@ Rewrite `main.py` as the CLI entry point that uses argparse to accept a YouTube 
 - Error messages are written to `sys.stderr`; success messages are written to `sys.stdout`.
 - Default output filename is `<video_id>.txt` (derived by calling `extract_video_id`).
 - The `if __name__ == "__main__": sys.exit(main())` guard is present.
+- `.venv/bin/ruff check main.py transcript.py` exits with code 0 and zero findings.
+- `.venv/bin/pylint main.py transcript.py --fail-under=10` exits with code 0 and a score of 10.00/10.
+- `.claude/agents/tester-agent.md` contains a Phase 3 lint section with ruff and pylint commands.
 
 ### Risks
 
-- **Import of error classes**: `main.py` imports `TranscriptsDisabled`, `NoTranscriptFound`, `VideoUnavailable`, and `NoTranscriptAvailable` from `transcript`. This is possible because `transcript.py` imports them at module level, making them available as names in the `transcript` namespace. If `transcript.py` moves these imports into a function body, the re-export will break. Mitigation: keep the imports at module level in `transcript.py`.
+- **Import of error classes**: `main.py` imports `TranscriptsDisabled`, `NoTranscriptFound`, `VideoUnavailable`, and `CouldNotRetrieveTranscript` from `transcript`. This is possible because `transcript.py` imports them at module level, making them available as names in the `transcript` namespace. If `transcript.py` moves these imports into a function body, the re-export will break. Mitigation: keep the imports at module level in `transcript.py`.
 - **argparse exit code**: argparse uses exit code 2 for argument parsing errors, which differs from the project's convention of exit code 1. This is standard Python behaviour and is acceptable — document it in the user-facing help if needed.
 - **Assumption**: The default filename `<video_id>.txt` is written to the current working directory. If the cwd is read-only, the write will fail. This is a known limitation documented in the project's `Known Risks` section.
 - **Open question**: Should `main.py` support a `--version` flag? Deferred to a future sub-plan.
