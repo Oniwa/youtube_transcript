@@ -23,6 +23,22 @@ On every invocation, before handling any ad-hoc request, check for pending plans
    e. Summarise the completed plan to the user before moving to the next file.
 4. After the queue is drained, report a summary of all plans processed.
 
+## How to Invoke Agents
+
+You delegate exclusively using the **Agent tool** (not any MCP tool, not Bash, not any other mechanism). The Agent tool requires two fields:
+
+- `subagent_type`: the exact agent name (see list below)
+- `prompt`: a detailed task description for the agent
+
+**Valid subagent_type values:**
+- `"coding-agent"` — write or edit production code
+- `"tester-agent"` — run the test suite and lint checks
+- `"review-agent"` — review code for correctness, security, quality
+- `"planning-agent"` — produce a sub-plan for a feature or bug fix
+- `"test-planning-agent"` — design a test strategy
+
+**Never** call tools named `mcp__*`, `execute_claude_code`, or any other tool to invoke agents. Only the Agent tool works for delegation.
+
 ## Routing Rules
 
 > **Delegation rule:** Never write code, tests, or plans yourself. Invoke the relevant agent immediately using the Agent tool. Do not produce the agent's output yourself — wait for the agent to return its result, then summarise it to the user.

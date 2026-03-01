@@ -13,7 +13,9 @@ Create the complete pytest test suite in `tests/` covering all 4 public function
 | File Path | Action | Description |
 |-----------|--------|-------------|
 | `tests/__init__.py` | Create | Empty package marker so pytest collects the `tests/` directory |
-| `tests/test_transcript.py` | Create | Full pytest suite with 6 test classes |
+| `tests/test_transcript.py` | Overwrite | Full pytest suite with 6 test classes (file already exists from plan 04; this plan replaces it with the complete suite) |
+| `tests/conftest.py` | Create | Registers the `integration` marker to suppress `PytestUnknownMarkWarning` |
+| `.claude/agents/tester-agent.md` | Update | Add Phase 3 lint section (ruff + pylint) so quality checks run on every future task |
 
 ### Steps
 
@@ -28,9 +30,10 @@ Create the complete pytest test suite in `tests/` covering all 4 public function
 
 3. **Install pytest** into the virtual environment if not already present:
    ```bash
-   .venv/bin/pip install pytest pytest-mock
+   .venv/bin/pip install pytest pytest-cov
    ```
    - Success: `.venv/bin/pytest --version` exits with code 0.
+   - Note: tests use `unittest.mock` (stdlib); `pytest-mock` is not required and should not be installed.
 
 4. **Create `tests/test_transcript.py`** and write the file header:
    ```python
@@ -53,7 +56,7 @@ Create the complete pytest test suite in `tests/` covering all 4 public function
        save_transcript,
    )
    from youtube_transcript_api._errors import (
-       NoTranscriptAvailable,
+       CouldNotRetrieveTranscript,
        NoTranscriptFound,
        TranscriptsDisabled,
        VideoUnavailable,
@@ -161,11 +164,11 @@ Create the complete pytest test suite in `tests/` covering all 4 public function
                fetch_transcript(self._VIDEO_ID)
 
        @patch("transcript.YouTubeTranscriptApi")
-       def test_raises_no_transcript_available(self, mock_api_cls: MagicMock) -> None:
-           mock_api_cls.return_value.fetch.side_effect = NoTranscriptAvailable(
-               self._VIDEO_ID, []
+       def test_raises_could_not_retrieve_transcript(self, mock_api_cls: MagicMock) -> None:
+           mock_api_cls.return_value.fetch.side_effect = CouldNotRetrieveTranscript(
+               self._VIDEO_ID
            )
-           with pytest.raises(NoTranscriptAvailable):
+           with pytest.raises(CouldNotRetrieveTranscript):
                fetch_transcript(self._VIDEO_ID)
 
        @patch("transcript.YouTubeTranscriptApi")
@@ -414,13 +417,48 @@ Create the complete pytest test suite in `tests/` covering all 4 public function
     ```
     - Success: command runs without crashing; output shows collected test counts.
 
+14. **Run ruff lint check** on `tests/test_transcript.py`:
+    ```bash
+    .venv/bin/ruff check tests/test_transcript.py
+    ```
+    - Success: command exits with code 0 and outputs `All checks passed!` (zero findings).
+    - If ruff is not installed: `.venv/bin/pip install ruff` first.
+
+15. **Run pylint** on `tests/test_transcript.py`:
+    ```bash
+    .venv/bin/pylint tests/test_transcript.py
+    ```
+    - Success: pylint exits with a score of `10.00/10` and zero findings.
+    - If pylint is not installed: `.venv/bin/pip install pylint` first.
+
+16. **Update `tester-agent.md`** to add a permanent Phase 3 lint step so all future test runs include quality checks:
+    - Append the following section to `.claude/agents/tester-agent.md` after Phase 2:
+    ```markdown
+    ## Phase 3 — Lint
+
+    After the test suite passes, run lint checks on all modified source and test files:
+
+    ```bash
+    # Ruff (zero findings required)
+    .venv/bin/ruff check <files>
+
+    # Pylint (10.00/10 required)
+    .venv/bin/pylint <files>
+    ```
+
+    Report any lint findings to the orchestrator as failures. Do not mark a task complete
+    if ruff or pylint produce any findings.
+    ```
+    - Files Affected: `.claude/agents/tester-agent.md`
+    - Success: the Phase 3 section is present in the agent file.
+
 ### Edge Cases
 
 - **Input**: `TestFetchTranscript` uses `NoTranscriptFound(video_id, languages, transcripts_dict)` — the exact constructor signature may differ between `youtube-transcript-api` versions. Verify the constructor arguments against the installed `==1.2.4` version before finalising the test.
-- **Input**: `TestFetchTranscript` uses `NoTranscriptAvailable(video_id, requested_languages)` — same caveat as above.
+- **Input**: `TestFetchTranscript` uses `CouldNotRetrieveTranscript(video_id)` — verify the constructor signature against the installed `==1.2.4` version. `NoTranscriptAvailable` does not exist in 1.2.4; `CouldNotRetrieveTranscript` is the correct base class.
 - **Runtime**: Real network tests (`TestIntegration`) may fail if YouTube rate-limits the IP or the video becomes unavailable. These tests are non-blocking by design (gated by the `integration` marker).
 - **Runtime**: `monkeypatch.chdir(tmp_path)` changes the working directory for the duration of one test — verify that subsequent tests are not affected by checking that cwd is restored after each test (pytest's `monkeypatch` fixture handles this automatically).
-- **Environment**: `pytest` or `pytest-mock` not installed in `.venv` — Step 3 installs them; if skipped, test collection will fail with `ModuleNotFoundError`.
+- **Environment**: `pytest` not installed in `.venv` — Step 3 installs it; if skipped, test collection will fail with `ModuleNotFoundError`. `pytest-mock` is not used; tests rely on `unittest.mock` (stdlib).
 - **Environment**: Test file imports `from main import main` — if `main.py` has a top-level import that fails (e.g., `transcript.py` not present), the entire test file will fail to collect. Ensure `04-transcript-core-module.md` is completed before this sub-plan.
 
 ### Acceptance Criteria
@@ -435,10 +473,13 @@ Create the complete pytest test suite in `tests/` covering all 4 public function
 - `TestSaveTranscript` uses `tmp_path` for all file paths.
 - `TestMain` uses `monkeypatch.chdir(tmp_path)` for default filename tests and `capsys` for stderr assertions.
 - `TestIntegration` methods are decorated with `@pytest.mark.integration` and are excluded when running `-m "not integration"`.
+- `.venv/bin/ruff check tests/test_transcript.py` exits with code 0 (zero findings).
+- `.venv/bin/pylint tests/test_transcript.py` reports `10.00/10` (zero findings).
+- `.claude/agents/tester-agent.md` contains a Phase 3 lint section covering ruff and pylint.
 
 ### Risks
 
-- **Constructor argument mismatch**: The exact signatures for `NoTranscriptFound`, `NoTranscriptAvailable`, `TranscriptsDisabled`, and `VideoUnavailable` may differ from what is documented. Run `.venv/bin/python -c "import inspect; from youtube_transcript_api._errors import NoTranscriptFound; print(inspect.signature(NoTranscriptFound))"` to verify before finalising the test code.
+- **Constructor argument mismatch**: The exact signatures for `NoTranscriptFound`, `CouldNotRetrieveTranscript`, `TranscriptsDisabled`, and `VideoUnavailable` may differ from what is documented. Run `.venv/bin/python -c "import inspect; from youtube_transcript_api._errors import NoTranscriptFound, CouldNotRetrieveTranscript; print(inspect.signature(NoTranscriptFound)); print(inspect.signature(CouldNotRetrieveTranscript))"` to verify before finalising the test code. Note: `NoTranscriptAvailable` does not exist in `==1.2.4`; use `CouldNotRetrieveTranscript` instead.
 - **Mock patch path**: The mock target `"transcript.YouTubeTranscriptApi"` patches the name as it appears in the `transcript` module's namespace. If the import in `transcript.py` is ever changed to `import youtube_transcript_api; youtube_transcript_api.YouTubeTranscriptApi(...)`, the patch path must be updated to `"youtube_transcript_api.YouTubeTranscriptApi"`.
 - **Assumption**: `TestIntegration` uses `"jNQXAC9IVRw"` (the first YouTube video) as a stable test fixture. If this video is deleted or its transcript is disabled, the integration test will fail. Mitigation: keep a backup video ID in a comment.
 - **Open question**: Should the test suite use `pytest-cov` for coverage enforcement (e.g., `--cov-fail-under=90`)? Deferred — coverage is run manually per the Verification commands in the parent plan.
