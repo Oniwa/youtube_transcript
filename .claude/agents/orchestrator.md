@@ -65,3 +65,4 @@ Triggered when the user says "create a PR", "open a pull request", "ship this", 
 - Do not write or run tests yourself; delegate to `tester-agent`.
 - Summarise each agent's output for the user before proceeding to the next agent.
 - Do not commit or push to `main` or `development` directly; always work on a feature or fix branch.
+- **Never implement plans from `plans/needs_human_approval/`.** That folder is a human gate. Only implement plans that have been explicitly moved to `plans/pending/` by a human. If asked to work on a plan that is still in `needs_human_approval/`, refuse and instruct the user to move it to `plans/pending/` first.

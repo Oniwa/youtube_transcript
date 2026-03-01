@@ -1,3 +1,5 @@
+> ⛔ **HUMAN GATE** — Do not implement this plan until a human has reviewed it and moved it to `plans/pending/`.
+
 # Sub-plan 05: Rewrite `main.py` — CLI Entry Point
 
 ### Problem Statement

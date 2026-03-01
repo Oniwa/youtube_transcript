@@ -1,3 +1,5 @@
+> ⛔ **HUMAN GATE** — Do not implement this plan until a human has reviewed it and moved it to `plans/pending/`.
+
 # Sub-plan 06: Create the Full Pytest Test Suite in `tests/`
 
 ### Problem Statement

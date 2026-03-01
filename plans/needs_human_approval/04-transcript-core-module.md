@@ -1,3 +1,5 @@
+> ⛔ **HUMAN GATE** — Do not implement this plan until a human has reviewed it and moved it to `plans/pending/`.
+
 # Sub-plan 04: Create `transcript.py` — Core Logic Module
 
 ### Problem Statement
