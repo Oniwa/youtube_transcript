@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from main import _build_parser, main
+from transcript import VideoMetadata
 from youtube_transcript_api._errors import (
     CouldNotRetrieveTranscript,
     NoTranscriptFound,
@@ -21,6 +22,7 @@ from youtube_transcript_api._errors import (
 VALID_URL = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
 VALID_ID = "jNQXAC9IVRw"
 TRANSCRIPT_TEXT = "Line one\nLine two\nLine three"
+FAKE_METADATA = VideoMetadata(title="Test Title", channel="Test Channel")
 
 
 # ---------------------------------------------------------------------------
@@ -93,82 +95,111 @@ class TestBuildParser:
 class TestMainHappyPath:
     """Tests for main() returning exit code 0."""
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_returns_zero_on_success(
-        self, mock_extract: object, mock_get: object
+        self, mock_extract: object, mock_get: object, mock_meta: object
     ) -> None:
         """main() returns 0 when the transcript is saved successfully."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
         mock_get.return_value = TRANSCRIPT_TEXT  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         result = main([VALID_URL])
         assert result == 0
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
-    def test_default_output_filename_is_video_id_txt(
-        self, mock_extract: object, mock_get: object, tmp_path: object
+    def test_default_output_filename_uses_channel_and_title(
+        self, mock_extract: object, mock_get: object, mock_meta: object
     ) -> None:
-        """When --output is omitted, the output path is <video_id>.txt."""
+        """When --output is omitted, the output path is <channel>_<title>.txt."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
         mock_get.return_value = TRANSCRIPT_TEXT  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         main([VALID_URL])
         mock_get.assert_called_once_with(  # type: ignore[attr-defined]
-            VALID_URL, f"{VALID_ID}.txt", languages=None
+            VALID_URL, "Test_Channel_Test_Title.txt", languages=None, header=mock_get.call_args[1]["header"]
         )
 
+    @patch("main.fetch_video_metadata")
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_default_output_filename_falls_back_to_video_id_on_metadata_failure(
+        self, mock_extract: object, mock_get: object, mock_meta: object
+    ) -> None:
+        """When metadata fetch fails, the output path falls back to <video_id>.txt."""
+        mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
+        mock_get.return_value = TRANSCRIPT_TEXT  # type: ignore[attr-defined]
+        mock_meta.side_effect = RuntimeError("oEmbed down")  # type: ignore[attr-defined]
+        main([VALID_URL])
+        mock_get.assert_called_once_with(  # type: ignore[attr-defined]
+            VALID_URL, f"{VALID_ID}.txt", languages=None, header=""
+        )
+
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_explicit_output_path_forwarded(
-        self, mock_extract: object, mock_get: object
+        self, mock_extract: object, mock_get: object, mock_meta: object
     ) -> None:
         """When --output is given, that path is forwarded to get_transcript."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
         mock_get.return_value = TRANSCRIPT_TEXT  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         main([VALID_URL, "--output", "custom.txt"])
         mock_get.assert_called_once_with(  # type: ignore[attr-defined]
-            VALID_URL, "custom.txt", languages=None
+            VALID_URL, "custom.txt", languages=None, header=mock_get.call_args[1]["header"]
         )
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_languages_forwarded_to_get_transcript(
-        self, mock_extract: object, mock_get: object
+        self, mock_extract: object, mock_get: object, mock_meta: object
     ) -> None:
         """--lang flags are forwarded as a list to get_transcript."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
         mock_get.return_value = TRANSCRIPT_TEXT  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         main([VALID_URL, "--lang", "en", "--lang", "fr"])
         mock_get.assert_called_once_with(  # type: ignore[attr-defined]
-            VALID_URL, f"{VALID_ID}.txt", languages=["en", "fr"]
+            VALID_URL, "Test_Channel_Test_Title.txt", languages=["en", "fr"], header=mock_get.call_args[1]["header"]
         )
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_success_prints_saved_path(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """On success, 'Transcript saved to:' appears on stdout."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
         mock_get.return_value = TRANSCRIPT_TEXT  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         main([VALID_URL, "--output", "out.txt"])
         captured = capsys.readouterr()
         assert "Transcript saved to: out.txt" in captured.out
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_success_prints_line_count(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """On success, the line count appears on stdout."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
         mock_get.return_value = TRANSCRIPT_TEXT  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         main([VALID_URL, "--output", "out.txt"])
         captured = capsys.readouterr()
         assert "Length: 3 lines" in captured.out
@@ -195,31 +226,37 @@ class TestMainErrorPaths:
         captured = capsys.readouterr()
         assert captured.err != ""
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_returns_one_on_transcripts_disabled(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """main() returns 1 when TranscriptsDisabled is raised."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         mock_get.side_effect = TranscriptsDisabled(video_id=VALID_ID)  # type: ignore[attr-defined]
         result = main([VALID_URL])
         assert result == 1
         assert capsys.readouterr().err != ""
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_returns_one_on_no_transcript_found(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """main() returns 1 when NoTranscriptFound is raised."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         mock_get.side_effect = NoTranscriptFound(  # type: ignore[attr-defined]
             video_id=VALID_ID,
             requested_language_codes=["xx"],
@@ -229,61 +266,73 @@ class TestMainErrorPaths:
         assert result == 1
         assert capsys.readouterr().err != ""
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_returns_one_on_could_not_retrieve(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """main() returns 1 when CouldNotRetrieveTranscript is raised."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         mock_get.side_effect = CouldNotRetrieveTranscript(video_id=VALID_ID)  # type: ignore[attr-defined]
         result = main([VALID_URL])
         assert result == 1
         assert capsys.readouterr().err != ""
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_returns_one_on_video_unavailable(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """main() returns 1 when VideoUnavailable is raised."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         mock_get.side_effect = VideoUnavailable(video_id=VALID_ID)  # type: ignore[attr-defined]
         result = main([VALID_URL])
         assert result == 1
         assert capsys.readouterr().err != ""
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_returns_one_on_oserror(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """main() returns 1 when OSError (e.g. write failure) is raised."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         mock_get.side_effect = OSError("Disk full")  # type: ignore[attr-defined]
         result = main([VALID_URL])
         assert result == 1
         assert "Could not save" in capsys.readouterr().err
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_returns_one_on_runtime_error(
         self,
         mock_extract: object,
         mock_get: object,
+        mock_meta: object,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """main() returns 1 when an unexpected RuntimeError is raised."""
         mock_extract.return_value = VALID_ID  # type: ignore[attr-defined]
+        mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         mock_get.side_effect = RuntimeError("Something went wrong")  # type: ignore[attr-defined]
         result = main([VALID_URL])
         assert result == 1

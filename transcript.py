@@ -6,7 +6,10 @@ extract a video ID, fetch a transcript, save it, or do all three.
 """
 from __future__ import annotations
 
+import json
 import re
+import urllib.request
+from dataclasses import dataclass
 from urllib.parse import urlparse, parse_qs
 
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -16,6 +19,13 @@ from youtube_transcript_api._errors import (
     TranscriptsDisabled,
     VideoUnavailable,
 )
+
+# Windows reserved device names that cannot be used as filenames.
+_RESERVED_NAMES = frozenset({
+    "CON", "PRN", "AUX", "NUL",
+    "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+    "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+})
 
 _VIDEO_ID_RE = re.compile(r'^[A-Za-z0-9_-]{11}$')
 
@@ -60,6 +70,97 @@ def extract_video_id(url_or_id: str) -> str:
     raise ValueError(
         f"Could not extract an 11-character video ID from: {url_or_id!r}"
     )
+
+
+@dataclass
+class VideoMetadata:
+    """Metadata for a YouTube video."""
+
+    title: str
+    channel: str
+
+
+def fetch_video_metadata(video_id: str) -> VideoMetadata:
+    """Fetch the title and channel name for a YouTube video via oEmbed.
+
+    Uses YouTube's public oEmbed endpoint — no API key required.
+
+    Args:
+        video_id: The 11-character YouTube video ID.
+
+    Returns:
+        A VideoMetadata instance with title and channel.
+
+    Raises:
+        RuntimeError: If the metadata cannot be retrieved.
+    """
+    url = (
+        f"https://www.youtube.com/oembed"
+        f"?url=https://www.youtube.com/watch?v={video_id}&format=json"
+    )
+    try:
+        with urllib.request.urlopen(url) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        return VideoMetadata(title=data["title"], channel=data["author_name"])
+    except Exception as err:
+        raise RuntimeError(
+            f"Could not fetch metadata for video '{video_id}': {err}"
+        ) from err
+
+
+def slugify(text: str, max_len: int = 50, fallback: str = "unknown") -> str:
+    """Convert text into a safe filename component.
+
+    Removes characters invalid on Windows, collapses whitespace to underscores,
+    strips trailing dots/underscores, and guards against Windows reserved names.
+
+    Args:
+        text: The input string to slugify.
+        max_len: Maximum length of the returned slug (default 50).
+        fallback: Value returned when the result would otherwise be empty.
+
+    Returns:
+        A filename-safe string.
+    """
+    # Remove Windows-invalid filename characters.
+    text = re.sub(r'[\\/:*?"<>|]', "", text)
+    # Collapse all whitespace runs to a single underscore.
+    text = re.sub(r"\s+", "_", text.strip())
+    # Strip trailing dots and underscores (invalid endings on Windows).
+    text = text.rstrip("._")
+    # Truncate to max_len and strip again in case truncation left a trailing dot/underscore.
+    text = text[:max_len].rstrip("._")
+    # Guard against Windows reserved device names.
+    if text.upper() in _RESERVED_NAMES:
+        text = f"{text}_file"
+    return text if text else fallback
+
+
+def make_output_filename(metadata: VideoMetadata) -> str:
+    """Build a default output filename from video metadata.
+
+    Args:
+        metadata: The video's title and channel name.
+
+    Returns:
+        A filename in the form ``<channel>_<title>.txt``.
+    """
+    channel = slugify(metadata.channel, fallback="unknown-channel")
+    title = slugify(metadata.title, fallback="untitled")
+    return f"{channel}_{title}.txt"
+
+
+def format_header(metadata: VideoMetadata) -> str:
+    """Format a human-readable header block for a transcript file.
+
+    Args:
+        metadata: The video's title and channel name.
+
+    Returns:
+        A header string ending with a blank line, ready to prepend to a transcript.
+    """
+    separator = "=" * 80
+    return f"Title:   {metadata.title}\nChannel: {metadata.channel}\n{separator}\n\n"
 
 
 def fetch_transcript(video_id: str, languages: list[str] | None = None) -> str:
@@ -121,6 +222,7 @@ def get_transcript(
     url_or_id: str,
     output_path: str,
     languages: list[str] | None = None,
+    header: str = "",
 ) -> str:
     """Extract a video ID, fetch its transcript, save it, and return the text.
 
@@ -131,9 +233,11 @@ def get_transcript(
         url_or_id: A YouTube URL in any supported format, or a bare video ID.
         output_path: Destination file path for the saved transcript.
         languages: Optional list of BCP-47 language codes in preference order.
+        header: Optional header string to prepend to the saved file content.
+            Does not affect the returned text. Defaults to an empty string.
 
     Returns:
-        The full transcript text that was saved.
+        The full transcript text (without header) that was saved.
 
     Raises:
         ValueError: If url_or_id is not a valid YouTube URL or video ID.
@@ -146,5 +250,5 @@ def get_transcript(
     """
     video_id = extract_video_id(url_or_id)
     text = fetch_transcript(video_id, languages=languages)
-    save_transcript(text, output_path)
+    save_transcript(header + text, output_path)
     return text

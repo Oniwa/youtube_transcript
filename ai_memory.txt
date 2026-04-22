@@ -1,0 +1,651 @@
+Every time that you open Claude, it half
+remembers you. Your name, maybe your job
+title, but nothing that actually matters
+for your work. So, you waste half of
+your session reexplaining the same
+context you explained last Tuesday. I
+built a three-layer system that makes
+Claude take notes on itself. So, every
+session, it picks up exactly where it
+left off last time. No reexlaining, no
+repeated mistakes, just an AI that
+genuinely gets smarter the more that you
+use it. Let me show you exactly how I
+set it up. Now, here's the problem with
+most of the AI tools you use today,
+specifically the memory piece. So, if
+you're using chatbt, Gemini, Claude,
+etc., what's happening is it's
+remembering the top of the iceberg. So,
+this is the iceberg of memories, and
+this is what it remembers. So, it
+remembers your name, your title, maybe
+some of your preferences, but these are
+all general and minimal and what the AI
+remembers, and it's applied across all
+conversations. But what we care about is
+the bottom of the iceberg. So, the area
+where the memories are truly valuable
+for your work. And these are things such
+as that your client hates long emails.
+Or that when your boss says, "Keep it
+tight," they're referring to keeping it
+under one page. Or maybe it remembers
+specific terminology that your team
+likes to use for certain projects. These
+are all things that are relevant for an
+AI to remember, but often times are
+excluded when you're just using chatb
+Claude or Gemini. Now, the three-layer
+system I'm going to share with you is
+actually going to fix this problem and
+do a lot more. And the benefit of this
+system is the compounding effect that I
+mentioned previously. So we're going
+from a tool to an asset. And what that
+means is every time you come back to
+this specific AI, it's not just
+improving day over day, but the AI is
+actually improving itself. There's very
+little you have to do for this AI to
+incrementally get better. So what is
+this magical three layer system that's
+going to do all these cool things for
+you? Well, this is that three layers. So
+we have layer 1, two, and three. And
+I'll walk you through each in detail
+later on, but I'll give you a quick
+overview now. And it's important to note
+that this three- layer system can only
+be used effectively inside of cloud
+code, cloud co-work or codecs. And it
+can only be used in these specific tools
+because these tools can actually read
+and write files on your desktop. And
+that's a core component to actually
+having a successful AI that remembers
+things across sessions. Now, with that
+caveat out of the way, the three layers
+we have, so the first layer here is the
+one that you've used time in and time
+out. So that's going to be the always on
+default. So this is readily available
+inside of Chatbt, Claude, and Gemini in
+the basic chat apps. But once we get
+past layer 1, that's where real value is
+unlocked and you can create AI that
+improves on itself, but also it's only
+available in those free tools that I
+mentioned. So as we move down this
+stack, we go from broad memories to very
+specific memories that are usually more
+valuable. So for layer 2, the mission,
+so this is going to be a file that's
+dedicated to each folder on your desktop
+or wherever you've saved these. So when
+the AI opens that folder, it initially
+knows exactly what its mission is and
+its purpose and doing things inside its
+folder are. After that, we have layer
+three, which are training materials. So,
+these are going to be training materials
+associated to what good looks like. So,
+if an AI is doing a task for you, it
+needs to know what good looks like so it
+can follow your best practices. Okay.
+So, if you're enjoying this, you're
+going to enjoy two other things. First
+off, Blow is a 30-day AI insight series,
+completely free. You'll get 30 insights
+in your inbox so I can apply AI to your
+business and your work. The second thing
+is if you'd like to work with me, blower
+a series of offerings to see if there's
+a good fit from the two of us, such as a
+private AI community for business
+leaders and owners or one-on-one AI
+coaching. With that being said, let's
+get back in the video. And some of you
+may ask, well, why don't we just take
+all three of these layers and then shove
+them all into the AI's head at once?
+There's many reasons as to why this is a
+bad idea, but the primary one is we're
+currently fighting uphill a battle with
+AI, which is its context window. In
+simpler terms, it's the AI's memory. So
+how much stuff you can shove into the
+AI's head without its intelligence
+degrading. And with this specific
+structure having these three layers
+separated, what we can do is we can do a
+thing called a technical term called
+progressive disclosure, but we don't
+really care about the technical term.
+What's happening here is we're what
+we're doing is we're exposing data to
+the AI incrementally. So it first looks
+at this these instructions. Then it
+looks at the mission. It doesn't have to
+look at all the layer three stuff. It
+only has to get a little bit of layer 3
+to achieve the task at hand. So, we're
+only showing the AI what it needs when
+it needs it. And this unlocks a lot of
+intelligence from the AI and allows it
+to achieve really complex tasks that it
+wasn't able to do historically. Now,
+let's look at layer 1. So, as a quick
+recap, as I mentioned previously, this
+is the always on default. And the way
+that you can find this in cloud
+co-worker codeex, I'll quickly show you.
+So, this is co-work here. So, if you
+select your name down here, you go to
+settings. Once you're in settings,
+you'll go to general. Under general, you
+have this section here that says
+personal preferences. This box is where
+you put in your global instructions. So
+this is layer one, the stuff that it
+remembers across all conversations. And
+this here is codeex. It's a very similar
+process. So once you go back, you select
+your settings here at the bottom left.
+Once you've gone into your settings, you
+want to go to personalization. And once
+you're inside personalization, and these
+are the custom instructions where you
+put in your layer 1 information. So
+that's exactly what they look like. Now,
+what do you put inside of layer 1? Well,
+there's four things that I usually
+recommend. Two of which are kind of
+mandatory, and the other two are kind of
+optional. So the first two that I
+recommend always including is going to
+be something in relation to your role.
+So what do you do? who you are and what
+industry you work inside of. You want to
+keep all of this underneath probably
+five lines or so. Reason being is
+because again, this is going to be
+shared across every conversation and you
+want to minimize the amount of
+information you're sharing. It just
+needs to be stuff that really matters to
+you. So after you've shared your role,
+then you want to share your
+communication style. So do you prefer
+things that are concise, thorough? Do
+you like formal language, informal
+language? You can add some of that stuff
+into this section. And then the optional
+things here are going to be behavior
+rules and safety rails. And then for
+behavior rules, we're simply telling the
+AI how to behave in certain situations.
+As an example, maybe you want the AI to
+ask you clarifying questions before it
+does anything. So it creates a plan and
+you know what that plan is. And after
+we've established a behavior, we then
+have the safety rails. So the safety
+rails again are optional. Usually people
+that are starting out using these tools,
+especially those like cloud co-work or
+codecs where they can write and read
+files on your desktop, they have some
+hesitation and concern on the AI
+overwriting things when it shouldn't.
+The first thing you should do is always
+have backups. So if the AI does make a
+mistake, you have backups and you're not
+worried about it. But as you start to
+use these tools more often, you start to
+build confidence in their ability not to
+mess things up. So over time, you may
+actually remove these safety rules. And
+one rule could be never to delete or
+overwrite files without asking me for
+explicit approval. This is an okay thing
+to do to start out, but for my opinion,
+it really messes up the user experience
+because you're always having to approve
+everything, and that takes away the
+autonomous ability of the AI to get more
+leverage from it. So once you've built
+confidence in the AI's ability to do
+tasks, you can then gradually remove
+these rails over time. So that's layer
+one. Now let's go on to layer two. This
+is the mission. So it's important to
+note that this mission file is dedicated
+to every folder you have inside of your
+desktop. So the parent folder the AI
+works inside of is going to have a
+mission file. And that mission file,
+depending on the tool you're using, is
+going to be either called a cloud.md
+file or it's going to be called an
+agents.mmd file. So if you're using
+codecs, it'll be agents.mmd. If you're
+using using cloud co-work, it'll be
+cloud.md. And the AI is always going to
+read this file before it does anything
+else. So the basic structure of this
+file is going to have three components.
+So it's going to have a purpose, a tree,
+and rules. The purpose at the top of
+this file is going to tell the AI what
+work happens inside of this folder.
+After that's been established, we then
+tell the AI what's inside of the folder.
+Because inside of this folder, there may
+be a series of subfolders and subfiles.
+So, we should tell the AI at a high
+level what's inside of here and also
+what each of those subfolders are meant
+to be used for. And then finally, we
+have the rules. So, the rules, the
+things the AI has to follow when doing
+tasks inside of this folder. And one
+final addition we're going to add to
+this file that sits next to the rules
+section is going to make all of this 10
+times more valuable because AI is going
+to update itself over time. And that's
+actually a note-taking feature. And
+that's what this is here. At the very
+bottom of our cloudmd file, we're going
+to have an additional section called
+note-taking. And this is where the AI
+self-improves over time. What I'll do is
+I'll show you what a actual cloud file
+looks like. But quickly, let's review
+what this does. So the purpose of this
+section is when the AI sees a
+correction, a preference or a pattern,
+it's going to automatically turn that
+into a note for future reference. And
+it's going to do that in two locations.
+Either it's going to do it in a context
+file, which we'll talk about these later
+on, or it's going to add it to the
+claw.md that I just shared with you. The
+way it's going to do that, it's going to
+do it in a concise way. So, it's going
+to have a oneline lesson learned. It's
+going to be dated, so it knows when that
+lesson was learned, and it's going to be
+written in plain language. Now, an
+important thing to note here is that if
+the AI notices that there are three or
+more lessons learned that are similar,
+it's going to create a new context file.
+So, in future sessions when its memory
+is wiped, it can go back and it can see
+all these lessons learned over time. And
+this is where we have the self-improving
+loop that starts to get created. Now,
+we've talked a lot about the claw.md.
+So, let me actually just show you what
+one looks like. And it's important to
+note before I actually walk through this
+is that you can have AI create these for
+you. So don't be overwhelmed by the
+complexity associated to how much
+information is in here and also how it's
+structured because all you have to do is
+give AI a pointer and it can create this
+file for you. And I'll talk you through
+exactly how to do that in a second. Now
+for this example, what we're going to
+have is we have a folder dedicated to a
+client. So this is client A in this
+folder. So this cloud.md file is solely
+focused on helping them do work for this
+client. So we give it a purpose. The
+purpose of this folder is to do all the
+work related to client A. And we give
+some context on who client A is. So we
+say client A is a regional healthcare
+group with 12 locations. The main
+engagement we currently have with this
+client is focusing on reducing the
+patient wait time. The main contact for
+this client is Sarah who's a COO. And
+here's some preferences that Sarah has.
+Now after the purpose, we have the tree.
+So this tree here tells the AI exactly
+what's inside of this folder and what
+subfolders are here. So you can see we
+have a few subfolders. We have one
+subfolder that's the context folder.
+Then we have three other subfolders that
+are focused on the actual data itself.
+I'll spend more time later on talking
+about these context files. But just note
+that these files in this folder are
+dedicated to showing the AI what good
+work looks like and how to do it well.
+So that's the tree section. And below
+this we have the rules and note-taking.
+So the rules are simply telling the AI
+what it needs to do in certain c certain
+situations. For example, if the AI is
+doing any client-f facing work, it needs
+to look at the context folder and this
+specific file in that folder to
+understand who the client actually is.
+Another good one here is that when the
+AI decides to create or discover new
+files inside of this parent folder, it
+needs to update the tree above. So, this
+tree will always be updated because the
+AI is always going to update it. And
+this final point in the rules, we'll
+talk about in a second because we need
+to talk about note-taking first on how
+this actually got there. So, note-taking
+is the self-improving loop that we have
+for the AI. And in here we're explicitly
+stating that the AI after each task it
+needs to log any corrections,
+preferences or patterns it learned
+through that process of that task. Now
+when it writes those lessons learned, it
+needs to write them into two specific
+locations. Either it's going to write it
+to a context file, these files that I
+mentioned above, or it's going to add it
+to this specific file, the cloud.md
+file. And when it does it, it needs to
+do it as a oneline with a date in plain
+language. And here is the example that I
+was just talking about. So this is a
+lesson learned. It learned that Sarah
+wants cost impacts in the first sentence
+of any report and it learned this on
+March 4th. And again at the end we state
+that if there are three or more lessons
+learned that are similar or related, we
+need you to create a new context file
+and then update the tree after you've
+created it. So this is a basic claw.md
+file. Remember this is the mission for
+the AI. Anytime that you open the AI in
+this folder, it reads this first thing.
+And the beautiful part about this file
+is that we can have AI create it for us.
+And this is the basic prompt you can use
+to have AI create this file for you
+following the best practices that I just
+shared. So what you're going to do is
+you're going to open up cloud co-work if
+you're creating cloud.mmd file. And
+you're going to open up cloud co-work
+and the specific folder that's for the
+project you want the AI to work on. Once
+you've opened that folder, you want to
+paste in this prompt and do one other
+thing. So once you've pasted in the
+prompt, you're going to put on dictation
+on your computer. So you're going to
+turn dictation on. So you go from speech
+to text. This is the thing I recommend
+for really any interaction with AI, but
+in this case, definitely where you're
+going to tell the AI what's the intent
+of this folder. What type of work needs
+to get done here? And you explain in as
+much detail as possible. Once you've
+done that, hit enter and the AI will do
+the rest. But I'm sure you're
+interested, so I'll walk you through the
+prompt here. So the prompt is simply
+saying that I want the AI to research
+the best practices for creating cloud.
+MD files as of today's date. So I'd
+actually recommend instead of just
+having this here, you would actually put
+today's date. So for me that's going to
+be March 5th. So I'd put March 5th here.
+After I've done this, I'm then going to
+ask the AI to look at what's already
+inside of this folder. So you should
+probably add additional files in this
+folder for that specific work that it's
+going to do there. So instead of instead
+of just pasting this prompt in, you're
+going to paste the prompt in, drop in a
+bunch of files and folders. It's going
+to look at those and then do the
+research based off of best practices.
+After it's done the research, it's then
+going to come in here and create that
+cloudmd file following the four sections
+that I mentioned previously. And most
+importantly, we added this section here,
+which is saying that we need to keep the
+overall file under 100 lines. The reason
+being is that remember this AI is going
+to look at this specific file every time
+it does a task. So, we need to make sure
+that this file specifically is
+information dense and contains
+everything it needs to then go gather
+other information for certain tasks. So,
+we're minimizing the amount of context
+we're filling in the AI's head any given
+moment. And that's our mission section.
+So, that's layer two. Now, we're going
+to layer three, which is the actual
+training materials. training AI on what
+good looks like and how to do things
+well. So let's take a look at the
+overall structure of the folder. So at
+the very top we have the project folder.
+So this is the parent folder that
+everything sits inside of. At the very
+top of the parent folder, we have the
+claw.md file that we just talked about.
+So this is the mission the AI is going
+to follow when doing tasks. In addition
+to that, we're going to have the context
+folder and then a bunch of other folders
+that are going to be needed for the AI
+to do its task. The primary difference
+between the context subfolder and all
+the other subfolders is the context
+folder is teaching the AI how to do
+something well. The remaining folders
+are simply necessary for the AI to
+achieve the task at all. So when you
+think about adding files to the
+subfolder for context, think about
+quality standards. So what makes
+something good for this specific task?
+That's what you add into this folder. So
+then we need to ask ourselves what is
+actually inside of a context file. How
+is it structured? Well, there's three
+layers. So, at the very top of this, we
+have the header. So, here we're going to
+tell the AI for this context file
+specifically, what is this file for and
+when should you actually use it. After
+that, we're going to go into the
+content. And this is where all the
+standards, preferences, and examples
+sit. So, the AI looks at this to see
+what good looks like, any of the
+specific preferences associated to good.
+And finally, we have the learning
+section. So, the learning section
+usually actually starts empty. So, this
+should be empty in the beginning because
+no lessons have been learned as of yet.
+But when the AI does learn lessons, it's
+incrementally going to add lessons
+learned to this section here. That's the
+general structure. So let me actually
+show you what an example looks like. So
+this is a client profile inside of the
+context folder. So the purpose of this
+specific file in the context folder is
+to teach the AI preferences about the
+client and for the client. So at the
+very top, we need to give the AI some
+understanding of what this file is for.
+So we explain this is for client A.
+We're going to give you some background
+on client A as well as communication
+preference in relation to that client.
+And we then tell the AI when it needs to
+use this information specifically when
+it's creating client facing
+deliverables. So that's the top portion.
+After this, we give some basic
+information around key context and some
+preferences each one of those contacts
+have. Below that, we have communication
+preferences and a series of other
+things. Some examples for communication
+preferences is the client prefers that
+their emails stay under 300 words. They
+also prefer plain language. And here's
+some key vocab that that client uses
+specifically in relation to the work
+that they do. So after communication
+preferences, we have what good looks
+like. So if the AI is going to create
+deliverables for the client, it needs to
+look at these examples of what good
+looks like. So we have a a time report
+and then we have an update email, both
+of which have been approved by the
+client on the quality. So the AI can
+look at these examples, gather
+inspiration and adapt those structures
+and preferences to the future
+deliverables it creates. And then
+finally, one of the most important parts
+of this entire thing are the lessons
+learned throughout this process. So
+remember this starts empty, but let's
+assume the AI has learned a series of
+things along the way. Some interesting
+findings the AI found and added to this
+specific context file is Sarah prefers
+charts over tables and Mark prefers to
+have the raw data associated to the
+chart when we present to them. And
+again, the beautiful part about this is
+the AI self-improves and then references
+these lessons learned for future
+iterations when working with its client
+or whatever task you're working on. And
+this is layer three, showing AI how to
+do things well. So now that we've talked
+through all three layers, I want to show
+you what the overall system looks like
+at one shot. And I can promise you if
+you understand this overall structure
+and start applying it to your own work
+with AI, the amount of leverage you're
+going to create, not just in your job,
+but your business is going to be
+massive. So we always start with layer
+1. So layer 1, remember, are the always
+on defaults. So the basic things AI
+remembers about you across all sessions.
+Keep this to under five to six lines.
+After layer 1, we then have layer two.
+And this is where the real value begins.
+And remember the mission file, the
+cloud.mmd or agents.mmd if you're using
+codecs has to be inside of its own
+folder. So the parent folder that where
+all the tasks occur for this specific
+project has its own cloud.mmd. Inside
+that cloudmd, the AI is always going to
+look at this when it opens this folder.
+And it's going to have the purpose in
+the file. It's going to have the tree
+structure for the subfolders inside of
+the overall parent folder as well as the
+rules AI has to follow and any notes
+that it's self-improved on because again
+this is the self-improving loop and
+where it begins. After layer two, we
+then have layer three. So this is where
+the context files sit. So we're teaching
+AI how to do things well. So we have
+standards, examples, learnings, etc. In
+addition to the context subfolder and
+the files inside of it, we have the
+working files and working subfolders. So
+this is the data that AI just needs to
+do its job. And by combining all of
+these and the AI starts to execute on
+tasks, it benefits from this learning
+loop. So when it learns things over
+time, it can add those lessons learned
+either to the cloud.mmd file or to the
+context files. If it gets three or more
+that are related, it then creates its
+own new context file, updates the tree
+inside of the cloud.MD, and updates the
+stuff inside of the context subfolder.
+And the beautiful part about all of this
+is in the next session when you open
+this up, all of the quality compounds
+over time because the AI remembers what
+good looks like, the preferences that
+you have, and any lessons that it's
+learned over time. Now, what I want you
+to do is I want you to take 20 minutes
+right now. Open up Cloud Co-work, create
+a single folder on your desktop, and run
+through this process. It's only going to
+take you probably 20 minutes. So, the
+first three minutes is setting up your
+global instructions for layer 1. After
+you've set up the always on defaults,
+then you need to do layer two. And
+remember, AI can help you create this.
+So, all you need to do is drop in a
+series of folders and subfiles inside of
+the parent folder. Give the AI the
+prompt that I just showed you, and it'll
+create the file for you. After you've
+set up layer 2, you're then going to go
+into layer 3. And again, this can be
+augmented with AI. All you have to do is
+create the subfolder, and then add in a
+series of files. Ideally, it's going to
+be a subset of three to five diverse
+examples for a specific example task.
+You give those files to an AI and you
+then ask it to extract out what makes
+these specific files good. Once it
+extracted those meta lessons, you can
+then have it create those specific
+context files based on the structure I
+just shared with you. And that's it. So,
+as a reminder, two quick things. First
+off, Blow is a 30-day AI insight series,
+completely free. You'll get 30 insights
+in your inbox so I can apply AI to your
+business and your work. The second thing
+is if you'd like to work with me, blower
+a series of offerings, see if there's a
+good fit between the two of us. Now that
+your AI gets smarter every session,
+there's one thing you need to stop
+doing. Asking it questions first. I know
+that sounds backwards, but this video
+right here shows you exactly why it
+works. So, go ahead and click it. Click
+that video.

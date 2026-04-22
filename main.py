@@ -5,6 +5,7 @@ Usage:
     python main.py <url>
     python main.py <url> --output transcript.txt
     python main.py <url> --lang en --lang fr
+    python main.py <url> --stdout
 """
 from __future__ import annotations
 
@@ -17,7 +18,11 @@ from transcript import (
     TranscriptsDisabled,
     VideoUnavailable,
     extract_video_id,
+    fetch_transcript,
+    fetch_video_metadata,
+    format_header,
     get_transcript,
+    make_output_filename,
 )
 
 
@@ -37,7 +42,19 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         default=None,
         help=(
-            "Output file path. Defaults to <video_id>.txt in the current directory."
+            "Output file path. Defaults to <channel>_<title>.txt in the current "
+            "directory (falls back to <video_id>.txt if metadata is unavailable)."
+        ),
+    )
+    parser.add_argument(
+        "--stdout",
+        "-s",
+        action="store_true",
+        default=False,
+        help=(
+            "Print the transcript to stdout instead of saving to a file. "
+            "A title/channel header is included when metadata is available. "
+            "All status messages and errors go to stderr."
         ),
     )
     parser.add_argument(
@@ -68,17 +85,36 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    # Determine the output path: use --output if given, else <video_id>.txt
     try:
         video_id = extract_video_id(args.url)
     except ValueError as err:
         print(f"Error: {err}", file=sys.stderr)
         return 1
 
-    output_path = args.output if args.output is not None else f"{video_id}.txt"
+    # Fetch metadata for title/channel; degrade gracefully on failure.
+    try:
+        metadata = fetch_video_metadata(video_id)
+    except RuntimeError as err:
+        print(f"Warning: could not fetch video metadata — {err}", file=sys.stderr)
+        metadata = None
+
+    header = format_header(metadata) if metadata is not None else ""
+
+    if args.output is not None:
+        output_path = args.output
+    elif metadata is not None:
+        output_path = make_output_filename(metadata)
+    else:
+        output_path = f"{video_id}.txt"
 
     try:
-        text = get_transcript(args.url, output_path, languages=args.languages)
+        if args.stdout:
+            text = fetch_transcript(video_id, languages=args.languages)
+            print(header + text)
+        else:
+            text = get_transcript(args.url, output_path, languages=args.languages, header=header)
+            print(f"Transcript saved to: {output_path}")
+            print(f"Length: {len(text.splitlines())} lines")
     except VideoUnavailable as err:
         print(f"Error: Video unavailable — {err}", file=sys.stderr)
         return 1
@@ -92,8 +128,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: {err}", file=sys.stderr)
         return 1
 
-    print(f"Transcript saved to: {output_path}")
-    print(f"Length: {len(text.splitlines())} lines")
     return 0
 
 

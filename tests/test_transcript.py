@@ -6,14 +6,20 @@ tests decorated with @pytest.mark.integration.
 """
 from __future__ import annotations
 
+import json
 import pytest
 from unittest.mock import MagicMock, patch
 
 from transcript import (
+    VideoMetadata,
     extract_video_id,
     fetch_transcript,
+    fetch_video_metadata,
+    format_header,
     get_transcript,
+    make_output_filename,
     save_transcript,
+    slugify,
 )
 from youtube_transcript_api._errors import (
     CouldNotRetrieveTranscript,
@@ -22,6 +28,8 @@ from youtube_transcript_api._errors import (
     VideoUnavailable,
 )
 from main import main
+
+FAKE_METADATA = VideoMetadata(title="Test Title", channel="Test Channel")
 
 
 # ---------------------------------------------------------------------------
@@ -288,6 +296,24 @@ class TestGetTranscript:
     @patch("transcript.save_transcript")
     @patch("transcript.fetch_transcript")
     @patch("transcript.extract_video_id")
+    def test_header_prepended_to_saved_file(
+        self,
+        mock_extract: MagicMock,
+        mock_fetch: MagicMock,
+        mock_save: MagicMock,
+        tmp_path: pytest.TempdirFactory,
+    ) -> None:
+        """When header is provided, it is prepended to the saved content."""
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_fetch.return_value = "transcript text"
+        out = str(tmp_path / "out.txt")
+        result = get_transcript("https://youtu.be/jNQXAC9IVRw", out, header="HEADER\n")
+        mock_save.assert_called_once_with("HEADER\ntranscript text", out)
+        assert result == "transcript text"
+
+    @patch("transcript.save_transcript")
+    @patch("transcript.fetch_transcript")
+    @patch("transcript.extract_video_id")
     def test_passes_languages_to_fetch(
         self,
         mock_extract: MagicMock,
@@ -318,7 +344,7 @@ class TestGetTranscript:
         mock_fetch: MagicMock,
         mock_save: MagicMock,
     ) -> None:
-        """get_transcript returns the fetched transcript text."""
+        """get_transcript returns the fetched transcript text (without header)."""
         mock_extract.return_value = "jNQXAC9IVRw"
         mock_fetch.return_value = "Line one\nLine two"
         result = get_transcript("jNQXAC9IVRw", "/tmp/out.txt")
@@ -357,19 +383,152 @@ class TestGetTranscript:
 
 
 # ---------------------------------------------------------------------------
-# main (CLI entry point)
+# fetch_video_metadata
 # ---------------------------------------------------------------------------
+
+
+class TestFetchVideoMetadata:
+    """Tests for fetch_video_metadata using mocked urllib."""
+
+    _VIDEO_ID = "jNQXAC9IVRw"
+    _OEMBED_RESPONSE = json.dumps({
+        "title": "Me at the zoo",
+        "author_name": "jawed",
+    }).encode("utf-8")
+
+    @patch("transcript.urllib.request.urlopen")
+    def test_returns_title_and_channel(self, mock_urlopen: MagicMock) -> None:
+        """Returns VideoMetadata with title and channel from oEmbed JSON."""
+        mock_response = MagicMock()
+        mock_response.read.return_value = self._OEMBED_RESPONSE
+        mock_urlopen.return_value.__enter__ = lambda s: mock_response
+        mock_urlopen.return_value.__exit__ = MagicMock(return_value=False)
+        result = fetch_video_metadata(self._VIDEO_ID)
+        assert result.title == "Me at the zoo"
+        assert result.channel == "jawed"
+
+    @patch("transcript.urllib.request.urlopen")
+    def test_raises_runtime_error_on_network_failure(self, mock_urlopen: MagicMock) -> None:
+        """Network failure raises RuntimeError with the video ID in the message."""
+        mock_urlopen.side_effect = OSError("Connection refused")
+        with pytest.raises(RuntimeError, match=self._VIDEO_ID):
+            fetch_video_metadata(self._VIDEO_ID)
+
+    @patch("transcript.urllib.request.urlopen")
+    def test_raises_runtime_error_on_bad_json(self, mock_urlopen: MagicMock) -> None:
+        """Malformed JSON response raises RuntimeError."""
+        mock_response = MagicMock()
+        mock_response.read.return_value = b"not json"
+        mock_urlopen.return_value.__enter__ = lambda s: mock_response
+        mock_urlopen.return_value.__exit__ = MagicMock(return_value=False)
+        with pytest.raises(RuntimeError):
+            fetch_video_metadata(self._VIDEO_ID)
+
+
+# ---------------------------------------------------------------------------
+# slugify
+# ---------------------------------------------------------------------------
+
+
+class TestSlugify:
+    """Tests for slugify."""
+
+    def test_spaces_become_underscores(self) -> None:
+        assert slugify("hello world") == "hello_world"
+
+    def test_removes_windows_invalid_chars(self) -> None:
+        assert slugify('file:name*"test"') == "filenametest"
+
+    def test_strips_trailing_dots(self) -> None:
+        assert slugify("name...") == "name"
+
+    def test_strips_trailing_underscores(self) -> None:
+        assert slugify("name___") == "name"
+
+    def test_truncates_to_max_len(self) -> None:
+        result = slugify("a" * 100, max_len=50)
+        assert len(result) == 50
+
+    def test_empty_string_returns_fallback(self) -> None:
+        assert slugify("") == "unknown"
+
+    def test_all_invalid_chars_returns_fallback(self) -> None:
+        assert slugify('/:*?"<>|\\') == "unknown"
+
+    def test_reserved_name_gets_suffix(self) -> None:
+        result = slugify("CON")
+        assert result == "CON_file"
+
+    def test_reserved_name_case_insensitive(self) -> None:
+        result = slugify("con")
+        assert result == "con_file"
+
+    def test_unicode_preserved(self) -> None:
+        result = slugify("日本語タイトル")
+        assert result == "日本語タイトル"
+
+
+# ---------------------------------------------------------------------------
+# make_output_filename
+# ---------------------------------------------------------------------------
+
+
+class TestMakeOutputFilename:
+    """Tests for make_output_filename."""
+
+    def test_basic_channel_and_title(self) -> None:
+        meta = VideoMetadata(title="My Video", channel="My Channel")
+        assert make_output_filename(meta) == "My_Channel_My_Video.txt"
+
+    def test_special_chars_removed(self) -> None:
+        meta = VideoMetadata(title='Title: "Cool"', channel="Chan/Nel")
+        assert make_output_filename(meta) == "ChanNel_Title_Cool.txt"
+
+    def test_empty_title_uses_fallback(self) -> None:
+        meta = VideoMetadata(title="", channel="Channel")
+        assert make_output_filename(meta) == "Channel_untitled.txt"
+
+    def test_empty_channel_uses_fallback(self) -> None:
+        meta = VideoMetadata(title="Title", channel="")
+        assert make_output_filename(meta) == "unknown-channel_Title.txt"
+
+
+# ---------------------------------------------------------------------------
+# format_header
+# ---------------------------------------------------------------------------
+
+
+class TestFormatHeader:
+    """Tests for format_header."""
+
+    def test_contains_title(self) -> None:
+        header = format_header(VideoMetadata(title="My Video", channel="My Channel"))
+        assert "My Video" in header
+
+    def test_contains_channel(self) -> None:
+        header = format_header(VideoMetadata(title="My Video", channel="My Channel"))
+        assert "My Channel" in header
+
+    def test_ends_with_blank_line(self) -> None:
+        header = format_header(VideoMetadata(title="T", channel="C"))
+        assert header.endswith("\n\n")
+
+    def test_contains_separator(self) -> None:
+        header = format_header(VideoMetadata(title="T", channel="C"))
+        assert "=" * 40 in header
 
 
 class TestMain:
     """Tests for the main() CLI entry point."""
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_success_exit_code_zero(
         self,
         mock_extract: MagicMock,
         mock_get: MagicMock,
+        mock_meta: MagicMock,
         tmp_path: pytest.TempdirFactory,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
@@ -377,6 +536,7 @@ class TestMain:
         monkeypatch.chdir(tmp_path)
         mock_extract.return_value = "jNQXAC9IVRw"
         mock_get.return_value = "transcript text"
+        mock_meta.return_value = FAKE_METADATA
         result = main(["https://youtu.be/jNQXAC9IVRw"])
         assert result == 0
 
@@ -391,30 +551,36 @@ class TestMain:
         captured = capsys.readouterr()
         assert "Error" in captured.err
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_custom_output_path(
         self,
         mock_extract: MagicMock,
         mock_get: MagicMock,
+        mock_meta: MagicMock,
         tmp_path: pytest.TempdirFactory,
     ) -> None:
         """The --output flag is forwarded to get_transcript."""
         mock_extract.return_value = "jNQXAC9IVRw"
         mock_get.return_value = "text"
+        mock_meta.return_value = FAKE_METADATA
         out = str(tmp_path / "custom.txt")
         result = main(["https://youtu.be/jNQXAC9IVRw", "--output", out])
         assert result == 0
         mock_get.assert_called_once_with(
-            "https://youtu.be/jNQXAC9IVRw", out, languages=None
+            "https://youtu.be/jNQXAC9IVRw", out, languages=None,
+            header=mock_get.call_args[1]["header"]
         )
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_lang_flag_forwarded(
         self,
         mock_extract: MagicMock,
         mock_get: MagicMock,
+        mock_meta: MagicMock,
         tmp_path: pytest.TempdirFactory,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
@@ -422,20 +588,24 @@ class TestMain:
         monkeypatch.chdir(tmp_path)
         mock_extract.return_value = "jNQXAC9IVRw"
         mock_get.return_value = "text"
+        mock_meta.return_value = FAKE_METADATA
         result = main(["https://youtu.be/jNQXAC9IVRw", "--lang", "en", "--lang", "fr"])
         assert result == 0
         mock_get.assert_called_once_with(
             "https://youtu.be/jNQXAC9IVRw",
-            "jNQXAC9IVRw.txt",
+            "Test_Channel_Test_Title.txt",
             languages=["en", "fr"],
+            header=mock_get.call_args[1]["header"],
         )
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_transcripts_disabled_exit_one(
         self,
         mock_extract: MagicMock,
         mock_get: MagicMock,
+        mock_meta: MagicMock,
         tmp_path: pytest.TempdirFactory,
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
@@ -443,44 +613,78 @@ class TestMain:
         """TranscriptsDisabled causes exit code 1 with an error on stderr."""
         monkeypatch.chdir(tmp_path)
         mock_extract.return_value = "jNQXAC9IVRw"
+        mock_meta.return_value = FAKE_METADATA
         mock_get.side_effect = TranscriptsDisabled("jNQXAC9IVRw")
         result = main(["https://youtu.be/jNQXAC9IVRw"])
         assert result == 1
         assert "Error" in capsys.readouterr().err
 
+    @patch("main.fetch_video_metadata")
     @patch("main.get_transcript")
     @patch("main.extract_video_id")
     def test_os_error_exit_one(
         self,
         mock_extract: MagicMock,
         mock_get: MagicMock,
+        mock_meta: MagicMock,
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
     ) -> None:
         """OSError from get_transcript causes exit code 1 with an error on stderr."""
         mock_extract.return_value = "jNQXAC9IVRw"
+        mock_meta.return_value = FAKE_METADATA
         mock_get.side_effect = OSError("permission denied")
         result = main(["https://youtu.be/jNQXAC9IVRw", "--output", "/ro/out.txt"])
         assert result == 1
         assert "Error" in capsys.readouterr().err
 
-    def test_default_output_filename_uses_video_id(
+    @patch("main.fetch_video_metadata")
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_default_output_filename_uses_channel_and_title(
         self,
+        mock_extract: MagicMock,
+        mock_get: MagicMock,
+        mock_meta: MagicMock,
         tmp_path: pytest.TempdirFactory,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """Default output filename is <video_id>.txt in the current directory."""
+        """Default output filename is <channel>_<title>.txt."""
         monkeypatch.chdir(tmp_path)
-        with patch("main.get_transcript") as mock_get, \
-                patch("main.extract_video_id") as mock_extract:
-            mock_extract.return_value = "jNQXAC9IVRw"
-            mock_get.return_value = "text"
-            main(["https://youtu.be/jNQXAC9IVRw"])
-            mock_get.assert_called_once_with(
-                "https://youtu.be/jNQXAC9IVRw",
-                "jNQXAC9IVRw.txt",
-                languages=None,
-            )
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_get.return_value = "text"
+        mock_meta.return_value = FAKE_METADATA
+        main(["https://youtu.be/jNQXAC9IVRw"])
+        mock_get.assert_called_once_with(
+            "https://youtu.be/jNQXAC9IVRw",
+            "Test_Channel_Test_Title.txt",
+            languages=None,
+            header=mock_get.call_args[1]["header"],
+        )
+
+    @patch("main.fetch_video_metadata")
+    @patch("main.get_transcript")
+    @patch("main.extract_video_id")
+    def test_default_output_filename_falls_back_on_metadata_failure(
+        self,
+        mock_extract: MagicMock,
+        mock_get: MagicMock,
+        mock_meta: MagicMock,
+        tmp_path: pytest.TempdirFactory,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """When metadata fails, default filename is <video_id>.txt and header is empty."""
+        monkeypatch.chdir(tmp_path)
+        mock_extract.return_value = "jNQXAC9IVRw"
+        mock_get.return_value = "text"
+        mock_meta.side_effect = RuntimeError("oEmbed unavailable")
+        main(["https://youtu.be/jNQXAC9IVRw"])
+        mock_get.assert_called_once_with(
+            "https://youtu.be/jNQXAC9IVRw",
+            "jNQXAC9IVRw.txt",
+            languages=None,
+            header="",
+        )
 
 
 # ---------------------------------------------------------------------------

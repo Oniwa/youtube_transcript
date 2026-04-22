@@ -1,0 +1,342 @@
+Title:   Harness Engineering: The Skill That Will Define 2026 for Solo Devs
+Channel: Solo Swift Crafter
+================================================================================
+
+So, okay. What's the best AI model right
+now? Claude, GPT, Gemini? And honestly,
+I think that's the wrong question. Like,
+completely the wrong question. Just real
+quick, uh I'm Daniel. I've been deep in
+iOS dev for uh over eight years now.
+Started out freelancing, designing UIs,
+bouncing from client to client, shipping
+other people's ideas while trying to
+figure out my own. And then after dubdub
+25, I just went all in solo. No more
+clients, no safety net. Since then, I've
+crafted over 15 of my own apps. All
+Swift UI, all built in public. And right
+now, honestly, every ounce of energy
+I've got goes into making this solo
+studio into something that actually
+lasts. Not another round of quick MVPs
+or AI generated slop, but real apps that
+hold up and scale. And yeah, all of that
+process, the whole messy journey lives
+on crafterslab. It's at crafterslab.dev.
+And it's not some tutorial graveyard or
+AI clone factory. It's genuinely my home
+base built for solo devs who use AI like
+a real teammate. Not like a vending
+machine you poke when you're stuck and
+hope for the best. If you care about the
+craft, if you're serious about uh
+leveling up and building things that
+actually last, yeah, you'd feel right at
+home. And hey, if you're still on
+Patreon, huge thanks for that. But heads
+up, everything's moved over to
+crafterslab.dev. That's where the whole
+crew is now. Come build with us. So,
+here's what got me thinking about all
+this. There was a study that came out
+recently. Um, researchers published this
+benchmark called Epics's agent. And what
+makes it different from like every other
+benchmark you see people arguing about
+online is that it tests agents on real
+professional work. Not coding puzzles,
+not multiplechoice. We're talking actual
+tasks that consultants, lawyers,
+analysts do on a daily basis. Each one
+takes a human about one to two hours to
+complete. So they ran every major
+frontier model through it. the best one
+completed those tasks about 24% of the
+time, one in four. And after eight
+attempts with the same model, it only
+climbed to around 40%. Now, keep in
+mind, uh, these are the same models, uh,
+scoring above 90% on the benchmarks
+everyone loses their minds over. So,
+either those benchmarks are off or we're
+measuring the wrong thing. And I think
+it's the second one, right? But okay, so
+here's where it gets real for us. The
+researchers actually dug into uh why the
+agents failed. And the answer wasn't
+that the models are dumb. Uh they had
+all the knowledge they needed. They
+could reason through the problems just
+fine. The failures were almost entirely
+about execution and orchestration. The
+agents would get lost after too many
+steps. They'd loop back to approaches
+that already failed. they just lose
+track of what they were even supposed to
+be doing in the first place. And if
+you're a solo dev using clawed code or
+cursor every day, yeah, you've been
+there. You've watched the agent spiral
+retry the same broken thing three times,
+completely forget the context from 20
+steps ago, and you're sitting there
+like, "Maybe I should switch to Opus.
+Maybe I need a different provider, but
+the data is saying that's not it. The
+model isn't the bottleneck, it's
+everything wrapped around it. And
+there's a word for that and I think it's
+gonna define uh 2026 the way agents
+define 2025. The word is harness. An
+agent harness is all the infrastructure
+around the model, what it can see, what
+tools it has access to, how it recovers
+when things go sideways, how it keeps
+track of what it's doing over a long
+session. OpenAI literally published a
+blog post called Harness Engineering.
+Anthropic put out a whole guide on
+building effective harnesses for
+longunning agents. Manish um the AI
+company Meta just acquired I that they
+published their context engineering
+lessons after rebuilding their entire
+agent framework five times in six
+months. Five times. And they're all
+saying the exact same thing. The harness
+is where the real engineering work
+lives, not the model. Okay. So, and this
+is the part that honestly surprised me
+because it runs completely counter to
+how most of us think about building with
+these tools. So, there's this story from
+Verscell. They had a text to SQL agent.
+Uh you ask a question, it writes a SQL
+query and they built it the way most
+people build agents, right? Gave it a
+bunch of specialized tools. One for
+understanding the database schema, one
+for writing queries, one for validating
+results. all this error handling wrapped
+around it and it worked about 80% of the
+time. Then they tried something kind of
+radical. They removed 80% of the tools,
+just ripped them out, gave the agent
+basic stuff, run bash commands, read
+files, standard command line tools like
+GP and cat, the kind of stuff you or I
+would actually use. And uh accuracy went
+from 80% to 100%. It used 40% fewer
+tokens and it was three and a half times
+faster. Not going to lie, that's kind of
+wild, right? And the engineer who built
+it said something that really stuck with
+me. Models are getting smarter. Context
+windows are getting larger. So maybe the
+best agent architecture is almost no
+architecture at all. And that just
+flips everything. You know what I mean?
+Because the the instinct uh especially
+when you're solo and you're trying to
+make this thing reliable is to keep
+adding more tools, more guard rails,
+more routing logic. You think more
+structure is going to help, but those
+tools weren't helping the model. They
+were getting in the way. And this isn't
+an isolated thing either. Manis went
+through the exact same realization. They
+rebuilt their entire agent framework
+five times in six months. And their
+biggest performance gains didn't come
+from adding features. Uh they came from
+removing them. They ripped out complex
+document retrieval, killed the fancy
+routting logic, replaced uh management
+agents with simple structured handoffs.
+Every iteration, the thing got simpler
+and it got better. And here's the part I
+think every solo dev running long clawed
+code sessions needs to hear. Manis found
+that their agent averaged around 50 uh
+tool calls per task. That's a lot of
+steps. And even with models that
+technically support huge context
+windows, performance just degrades past
+a certain point. The model doesn't
+suddenly forget everything. It's more
+like the signal gets buried under noise.
+Your important instructions from the
+start of the session get lost under
+hundreds of intermediate results. So
+their fix was dead simple. They started
+treating the file system as the model's
+external memory. Instead of cramming
+everything into the context window, the
+agent writes key info to a file and
+reads it back when needed. And yeah, if
+you use clawed code, you've literally
+seen this. The claw.md files, the to-do
+lists, the progress tracking, that's
+this exact pattern playing out in your
+terminal every day. All right. So,
+remember what I said about everyone
+converging on the same idea because when
+you look at the three most successful
+agent systems right now, they all
+arrived at the same place from
+completely different directions. Codeex
+from OpenAI, it's got this layered
+approach. An orchestrator that plans, an
+executive that handles individual tasks,
+and a recovery layer that yeah catches
+failures. It's robust. You can hand it
+stuff and walk away. That's one
+philosophy. Clawed Code. And I use this
+every single day. The core is literally
+just four tools. Read a file, write a
+file, edit a file, run a bash command.
+That's it. Most of the intelligence
+lives in the model itself. The harness
+stays minimal. And when you need more
+extensibility comes through MCP and
+skills that the agent picks up as
+needed. And then manish landed on what
+I'd call reduce offload isolate actively
+shrink the context use the file system
+for memory spin up sub aents for heavy
+tasks and just bring back the summary.
+Three totally different approaches all
+converging on the same insight. Uh the
+harness matters more than the model. And
+for solo devs, this changes what you
+should actually be spending your time on
+because, you know, we don't have
+infinite hours. Every hour you spend on
+Reddit debating Claude versus GPT is an
+hour you're not shipping. And there's
+this idea from Richard Sutton, uh, one
+of the creators of reinforcement
+learning called the bitter lesson. The
+core argument is that approaches which
+scale with compute always end up beating
+approaches that rely on handgineered
+knowledge applied to what we're doing.
+That means something very specific. As
+models get smarter, your harness should
+get simpler, not more complex. If you're
+adding more handcoded logic, more custom
+pipelines with every model upgrade,
+you're swimming against the current. And
+honestly, that overengineering is
+probably why your agent keeps breaking.
+So, here's what I'd actually try. First,
+uh, do the Versel experiment yourself.
+If you've got any kind of agent setup,
+strip it down. Remove the specialized
+tools. Give it a bash terminal and basic
+file access and just see what happens.
+The model is probably smarter than the
+tool pipeline you built around it.
+Second, add a progress file. Have your
+agent maintain a running to-do list that
+it updates after each step. It reads the
+file at the start of each action, writes
+to it at the end. This is exactly what
+Claude code does with those markdown
+files. And it's the same pattern manis
+landed on after five complete rewrites.
+I actually have a whole system for this
+wired up in the lab with all my agent
+instructions and MD templates ready to
+go if you're curious. And third, uh,
+start learning about MCP and skills.
+These give the model clean standardized
+ways to work with external tools without
+you having to hardcode every
+integration. That's where the
+extensibility lives. Now 2025 was the
+year of agents and for the most part
+yeah that happened but 2026 I think 2026
+is the year of harnesses and the same
+model uh the exact same model be behaves
+completely differently in claude code
+compared to cursor compared to codeex.
+So choose your harness carefully whether
+you're using a coding agent or building
+one. So yeah, if you're still here,
+honestly, you're a legend. And look, I
+know the model discourse is loud right
+now. Every week there's a new drop, a
+new benchmark, a new thread about which
+one is king. But the actual data, the
+actual engineering coming out of the
+companies building this stuff, it's all
+pointing somewhere else. The harness is
+where the wins are. And as solo devs,
+that's actually great news. But um
+because building a better harness is
+something you can do right now today
+without waiting for the next model
+release. And you know if you want to go
+deeper into how I actually set all this
+up, the MD files, the agent workflows,
+how I wire everything together for my
+own apps, come check out
+crafterslab.dev.
+It's not some tutorial dump or another
+AI content farm. It's genuinely my home
+base built for solo devs who treat a I
+like a real teammate and actually care
+about what they ship. Inside you get
+full walkthroughs, real short video
+tutorials, a bunch of clawed code skills
+you can grab and use right away, and
+downloadable resources you can drop
+straight into your projects. Members
+riff in the comments, ask follow-ups, go
+back and forth. It's a real
+conversation, not some one-way content
+feed. But the real core, the notion team
+spaces, my live playbook, you get a
+front row seat to how I run every single
+app I'm building, the actual MD files I
+use on real projects, the prompt
+library, the docs I'm writing as I go,
+all the automations running behind the
+scenes, nothing polished for the camera,
+just the real process, messy parts and
+all. And there's Swift Brain, a curated
+Swift and Swift UI library I've been
+building out for years. deep dive
+keynotes, private talks I spent real
+money curating, the kind of material
+that's not floating around in public
+training data. This is what I actually
+use to build um custom MCPs to set up
+skills for claude code, for cursor, all
+of it. Always experimenting, always
+sharing what sticks. And then ops lab,
+that's where all the AI agent
+instructions live. the notion templates,
+the clawed code skills, the workflows,
+automations, all wired up and ready for
+you to copy, tear apart, totally break,
+and rebuild your own way. The whole
+point is keeping the indie stack
+connected, so you're never really
+building alone, even if you're solo at
+the keyboard. So, yeah, if you want to
+get in while the crew is still small and
+prices are locked, now is kind of the
+sweet spot. It feels way more like a
+behind-the-scenes dev lounge than some
+giant faceless forum. Would genuinely
+love to see you in there. Trade some
+takes on this harness stuff. Maybe learn
+something from what you're building
+next. Keep crafting, keep experimenting,
+and don't let the benchmark noise
+distract you from what actually matters.
+Peace.
