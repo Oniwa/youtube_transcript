@@ -7,9 +7,12 @@ tests decorated with @pytest.mark.integration.
 from __future__ import annotations
 
 import json
+from pathlib import Path
+
 import pytest
 from unittest.mock import MagicMock, patch
 
+import main as main_module
 from transcript import (
     VideoMetadata,
     extract_video_id,
@@ -30,6 +33,7 @@ from youtube_transcript_api._errors import (
 from main import main
 
 FAKE_METADATA = VideoMetadata(title="Test Title", channel="Test Channel")
+TRANSCRIPTS_DIR = Path(main_module.__file__).resolve().parent / "transcripts"
 
 
 # ---------------------------------------------------------------------------
@@ -581,11 +585,8 @@ class TestMain:
         mock_extract: MagicMock,
         mock_get: MagicMock,
         mock_meta: MagicMock,
-        tmp_path: pytest.TempdirFactory,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Multiple --lang flags are collected and forwarded as a list."""
-        monkeypatch.chdir(tmp_path)
         mock_extract.return_value = "jNQXAC9IVRw"
         mock_get.return_value = "text"
         mock_meta.return_value = FAKE_METADATA
@@ -593,7 +594,7 @@ class TestMain:
         assert result == 0
         mock_get.assert_called_once_with(
             "https://youtu.be/jNQXAC9IVRw",
-            "Test_Channel_Test_Title.txt",
+            str(TRANSCRIPTS_DIR / "Test_Channel_Test_Title.txt"),
             languages=["en", "fr"],
             header=mock_get.call_args[1]["header"],
         )
@@ -646,18 +647,15 @@ class TestMain:
         mock_extract: MagicMock,
         mock_get: MagicMock,
         mock_meta: MagicMock,
-        tmp_path: pytest.TempdirFactory,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """Default output filename is <channel>_<title>.txt."""
-        monkeypatch.chdir(tmp_path)
+        """Default output filename is <channel>_<title>.txt, anchored to transcripts/."""
         mock_extract.return_value = "jNQXAC9IVRw"
         mock_get.return_value = "text"
         mock_meta.return_value = FAKE_METADATA
         main(["https://youtu.be/jNQXAC9IVRw"])
         mock_get.assert_called_once_with(
             "https://youtu.be/jNQXAC9IVRw",
-            "Test_Channel_Test_Title.txt",
+            str(TRANSCRIPTS_DIR / "Test_Channel_Test_Title.txt"),
             languages=None,
             header=mock_get.call_args[1]["header"],
         )
@@ -670,18 +668,15 @@ class TestMain:
         mock_extract: MagicMock,
         mock_get: MagicMock,
         mock_meta: MagicMock,
-        tmp_path: pytest.TempdirFactory,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """When metadata fails, default filename is <video_id>.txt and header is empty."""
-        monkeypatch.chdir(tmp_path)
         mock_extract.return_value = "jNQXAC9IVRw"
         mock_get.return_value = "text"
         mock_meta.side_effect = RuntimeError("oEmbed unavailable")
         main(["https://youtu.be/jNQXAC9IVRw"])
         mock_get.assert_called_once_with(
             "https://youtu.be/jNQXAC9IVRw",
-            "jNQXAC9IVRw.txt",
+            str(TRANSCRIPTS_DIR / "jNQXAC9IVRw.txt"),
             languages=None,
             header="",
         )

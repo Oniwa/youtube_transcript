@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from transcript import (
     CouldNotRetrieveTranscript,
@@ -42,8 +43,9 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         default=None,
         help=(
-            "Output file path. Defaults to <channel>_<title>.txt in the current "
-            "directory (falls back to <video_id>.txt if metadata is unavailable)."
+            "Output file path. Defaults to <channel>_<title>.txt in this project's "
+            "transcripts/ directory (falls back to <video_id>.txt if metadata is "
+            "unavailable), regardless of the caller's current directory."
         ),
     )
     parser.add_argument(
@@ -102,10 +104,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.output is not None:
         output_path = args.output
-    elif metadata is not None:
-        output_path = make_output_filename(metadata)
     else:
-        output_path = f"{video_id}.txt"
+        transcripts_dir = Path(__file__).resolve().parent / "transcripts"
+        transcripts_dir.mkdir(exist_ok=True)
+        filename = make_output_filename(metadata) if metadata is not None else f"{video_id}.txt"
+        output_path = str(transcripts_dir / filename)
 
     try:
         if args.stdout:

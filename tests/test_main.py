@@ -6,11 +6,15 @@ are mocked via unittest.mock wherever network interaction would otherwise occur.
 """
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
+import main as main_module
 from main import _build_parser, main
+
+TRANSCRIPTS_DIR = Path(main_module.__file__).resolve().parent / "transcripts"
 from transcript import VideoMetadata
 from youtube_transcript_api._errors import (
     CouldNotRetrieveTranscript,
@@ -120,7 +124,10 @@ class TestMainHappyPath:
         mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         main([VALID_URL])
         mock_get.assert_called_once_with(  # type: ignore[attr-defined]
-            VALID_URL, "Test_Channel_Test_Title.txt", languages=None, header=mock_get.call_args[1]["header"]
+            VALID_URL,
+            str(TRANSCRIPTS_DIR / "Test_Channel_Test_Title.txt"),
+            languages=None,
+            header=mock_get.call_args[1]["header"],
         )
 
     @patch("main.fetch_video_metadata")
@@ -135,7 +142,7 @@ class TestMainHappyPath:
         mock_meta.side_effect = RuntimeError("oEmbed down")  # type: ignore[attr-defined]
         main([VALID_URL])
         mock_get.assert_called_once_with(  # type: ignore[attr-defined]
-            VALID_URL, f"{VALID_ID}.txt", languages=None, header=""
+            VALID_URL, str(TRANSCRIPTS_DIR / f"{VALID_ID}.txt"), languages=None, header=""
         )
 
     @patch("main.fetch_video_metadata")
@@ -165,7 +172,10 @@ class TestMainHappyPath:
         mock_meta.return_value = FAKE_METADATA  # type: ignore[attr-defined]
         main([VALID_URL, "--lang", "en", "--lang", "fr"])
         mock_get.assert_called_once_with(  # type: ignore[attr-defined]
-            VALID_URL, "Test_Channel_Test_Title.txt", languages=["en", "fr"], header=mock_get.call_args[1]["header"]
+            VALID_URL,
+            str(TRANSCRIPTS_DIR / "Test_Channel_Test_Title.txt"),
+            languages=["en", "fr"],
+            header=mock_get.call_args[1]["header"],
         )
 
     @patch("main.fetch_video_metadata")
